@@ -1,25 +1,35 @@
-# Lime Speed Test Clickable Prototype
+# LIME Clickable Slot Builder Prototype
 
-Static clickable prototype for a storefront WYSIWYG editor.
+React/Vite prototype for the storefront slot builder and merchandising rules editor.
+
+The uploaded prototype source is restored during build from compressed chunks in `scripts/app-source` by `scripts/restore-app.mjs`.
 
 ## What is inside
 
-- 3-column editor layout: rules panel, storefront preview, entity library
-- Region/platform switches: RU/KZ/UAE and Web/iOS/Android
-- AUTO / MANUAL / HYBRID modes
-- Manual override and pinned slot behavior
-- OOS ghosting behavior
-- Overflow rule: `+N candidates · distribute below`
-- Publish checklist modal
+- React component: `ClickableSlotBuilderPrototype`
+- Vite build with GitHub Pages base path `/testti/`
+- `lucide-react` icons
+- Tailwind runtime styling via CDN
+- Source restore step before `npm run build`
+- GitHub Actions workflow that builds `dist` and deploys it to Pages
+
+## Local launch
+
+```bash
+npm install
+npm run dev
+```
+
+## Production build
+
+```bash
+npm run build
+```
 
 ## GitHub Pages
 
-The prototype is a static `index.html` file and can be published from the `main` branch root using GitHub Pages.
+GitHub Pages should use **GitHub Actions** as the source.
 
-Repository settings path:
-
-`Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main / root → Save`
-
-After Pages is enabled, the public URL should be:
+Expected public URL:
 
 `https://micromaaash-dot.github.io/testti/`
