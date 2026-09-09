@@ -4,9 +4,9 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/catalog-data.mjs && node scripts/prepare-app.mjs && node scripts/content-panel.mjs",
+    "predev": "node scripts/catalog-data.mjs && node scripts/prepare-app.mjs && node scripts/content-panel.mjs && node scripts/section-rules.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/catalog-data.mjs && node scripts/prepare-app.mjs && node scripts/content-panel.mjs",
+    "prebuild": "node scripts/catalog-data.mjs && node scripts/prepare-app.mjs && node scripts/content-panel.mjs && node scripts/section-rules.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
