@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs",
+    "prebuild": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs && node scripts/export-generated-debug.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
