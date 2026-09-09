@@ -1,0 +1,16 @@
+﻿look_id;Название образа RU;Название образа EN;Отдел;Коллекция;Артикулы товаров;Количество добавленных товаров в образ;Суммарное количество товаров на стоке;Фотография 1;Фотография 2;Фотография 3;Все фотографии
+W01;Городская база;City Essentials;Женщины;Basic|Denim|Studio;LIM005|LIM006|LIM051|LIM009;4;102;W01_1.jpg;W01_2.jpg;W01_3.jpg;W01_1.jpg|W01_2.jpg|W01_3.jpg
+W02;Вечерний минимализм;Evening Minimalism;Женщины;Evening|Studio;LIM004|LIM064|LIM001;3;43;W02_1.jpg;W02_2.jpg;W02_3.jpg;W02_1.jpg|W02_2.jpg|W02_3.jpg
+W03;Studio Office;Studio Office;Женщины;Studio;LIM054|LIM053|LIM065|LIM070;4;59;W03_1.jpg;W03_2.jpg;W03_3.jpg;W03_1.jpg|W03_2.jpg|W03_3.jpg
+W04;Total Denim Weekend;Total Denim Weekend;Женщины;Basic|Denim;LIM063|LIM006|LIM059;3;92;W04_1.jpg;W04_2.jpg;W04_3.jpg;W04_1.jpg|W04_2.jpg|W04_3.jpg
+W05;Sport City;Sport City;Женщины;Basic|Sport|Studio;LIM010|LIM068|LIM058|LIM061;4;108;W05_1.jpg;W05_2.jpg;W05_3.jpg;W05_1.jpg|W05_2.jpg|W05_3.jpg
+M01;Modern Office;Modern Office;Мужчины;Basic|Studio;LIM074|LIM093|LIM097|LIM076;4;58;M01_1.jpg;M01_2.jpg;M01_3.jpg;M01_1.jpg|M01_2.jpg|M01_3.jpg
+M02;Denim Everyday;Denim Everyday;Мужчины;Basic|Denim;LIM073|LIM099|LIM089;3;78;M02_1.jpg;M02_2.jpg;M02_3.jpg;M02_1.jpg|M02_2.jpg|M02_3.jpg
+M03;Urban Black;Urban Black;Мужчины;Basic|Sport|Studio;LIM084|LIM100|LIM095|LIM091;4;89;M03_1.jpg;M03_2.jpg;M03_3.jpg;M03_1.jpg|M03_2.jpg|M03_3.jpg
+M04;Smart Casual;Smart Casual;Мужчины;Basic|Studio;LIM078|LIM086|LIM081|LIM090;4;78;M04_1.jpg;M04_2.jpg;M04_3.jpg;M04_1.jpg|M04_2.jpg|M04_3.jpg
+M05;Summer Utility;Summer Utility;Мужчины;Summer|Basic|Casual;LIM094|LIM088|LIM085;3;70;M05_1.jpg;M05_2.jpg;M05_3.jpg;M05_1.jpg|M05_2.jpg|M05_3.jpg
+K01;School Soft;Soft School;Дети;Kids|Kids School;LIM109|LIM108|LIM115|LIM119;4;70;K01_1.jpg;K01_2.jpg;K01_3.jpg;K01_1.jpg|K01_2.jpg|K01_3.jpg
+K02;Denim Girl;Denim Girl;Дети;Kids|Kids Denim;LIM112|LIM104|LIM117|LIM110;4;92;K02_1.jpg;K02_2.jpg;K02_3.jpg;K02_1.jpg|K02_2.jpg|K02_3.jpg
+K03;Pastel Sport;Pastel Sport;Дети;Kids Sport|Kids;LIM106|LIM107|LIM105;3;74;K03_1.jpg;K03_2.jpg;K03_3.jpg;K03_1.jpg|K03_2.jpg|K03_3.jpg
+K04;School Navy;School Navy;Дети;Kids School|Kids;LIM128|LIM136|LIM130|LIM131;4;56;K04_1.jpg;K04_2.jpg;K04_3.jpg;K04_1.jpg|K04_2.jpg|K04_3.jpg
+K05;Weekend Utility;Weekend Utility;Дети;Kids|Kids Casual|Kids Sport|Kids Denim;LIM123|LIM124|LIM127|LIM125;4;103;K05_1.jpg;K05_2.jpg;K05_3.jpg;K05_1.jpg|K05_2.jpg|K05_3.jpg
