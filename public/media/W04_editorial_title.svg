@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="100%" height="100%" fill="#F4F2EE"/>
+  <text x="1472" y="99" text-anchor="end"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="24" letter-spacing="5" fill="#1A1A1A">W04</text>
+  <text x="1472" y="423" text-anchor="end"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="112" font-weight="500"
+        letter-spacing="-2" fill="#111111">
+    <tspan x="1472" dy="0">ТОТАЛЬНЫЙ ДЕНИМ</tspan>
+  </text>
+  <line x1="128" y1="556" x2="1472" y2="556"
+        stroke="#111111" stroke-width="2"/>
+  <text x="1472" y="580" text-anchor="end"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="28" letter-spacing="3" fill="#111111">ВЫХОДНОЙ / ЖЕНЩИНЫ</text>
+</svg>
