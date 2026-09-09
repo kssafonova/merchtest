@@ -1,26 +1,18 @@
 {
-  "name": "lime-clickable-slot-builder-prototype",
+  "name": "lime-lego-merchandising-prototype",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/restore-app.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/restore-app.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
-    "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
     "lucide-react": "latest"
-  },
-  "devDependencies": {
-    "tailwindcss": "latest",
-    "postcss": "latest",
-    "autoprefixer": "latest"
   }
 }
