@@ -5,9 +5,10 @@ let app = readFileSync(appPath, 'utf8');
 
 const parentFitHandler = "onFitChange={(sectionId, slotIndex, fit) => updateSection(sectionId, (source) => ({ ...source, slotFits: { ...(source.slotFits || {}), [slotIndex]: fit } }))}";
 if (!app.includes(parentFitHandler)) {
-  const anchor = 'onUnpin={unpinEntity}';
-  if (!app.includes(anchor)) throw new Error('SectionCanvas parent onUnpin prop not found for fit handler');
-  app = app.replace(anchor, `${anchor} ${parentFitHandler}`);
+  const matches = [...app.matchAll(/onUnpin=\{[^}\n]+\}/g)];
+  if (!matches.length) throw new Error('No onUnpin JSX prop found for fit handler');
+  const target = matches[matches.length - 1][0];
+  app = app.replace(target, `${target} ${parentFitHandler}`);
 }
 
 if (!app.includes(parentFitHandler)) throw new Error('Media fit handler was not attached');
