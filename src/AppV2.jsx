@@ -2,13 +2,11 @@ import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
-  Check,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
   Copy,
   Eye,
-  FileImage,
   Film,
   GripVertical,
   Heart,
@@ -18,12 +16,10 @@ import {
   Menu,
   Monitor,
   MoreHorizontal,
-  Package,
   Pin,
   Plus,
   RefreshCw,
   Search,
-  Settings,
   ShoppingBag,
   Smartphone,
   Sparkles,
@@ -60,31 +56,26 @@ const TYPE_LIBRARY = [
     id: 'TYPE-1', name: 'TYPE-1', system: true, category: 'Товары',
     description: 'Один акцентный слот',
     containers: [{ cols: 12, slots: [{ span: 12 }] }],
-    defaults: ['product'],
   },
   {
     id: 'TYPE-2', name: 'TYPE-2', system: true, category: 'Товары',
     description: 'Два равных слота',
     containers: [{ cols: 12, slots: [{ span: 6 }, { span: 6 }] }],
-    defaults: ['product'],
   },
   {
     id: 'TYPE-3', name: 'TYPE-3', system: true, category: 'Товары',
     description: 'Три равных слота',
     containers: [{ cols: 12, slots: [{ span: 4 }, { span: 4 }, { span: 4 }] }],
-    defaults: ['product'],
   },
   {
     id: 'TYPE-4', name: 'TYPE-4', system: true, category: 'Креативные',
     description: 'Крупный слот + два компактных',
     containers: [{ cols: 12, slots: [{ span: 8, rows: 2 }, { span: 4 }, { span: 4 }] }],
-    defaults: ['look', 'image', 'video', 'svg'],
   },
   {
     id: 'TYPE-5', name: 'TYPE-5', system: true, category: 'Главная',
     description: 'Комбинированный горизонтальный тайп',
     containers: [{ cols: 12, slots: [{ span: 6 }, { span: 3 }, { span: 3 }] }],
-    defaults: ['product', 'look', 'image', 'video'],
   },
   {
     id: 'TYPE-13', name: 'TYPE-13', system: true, category: 'Эдиториал',
@@ -93,7 +84,6 @@ const TYPE_LIBRARY = [
       { cols: 12, slots: [{ span: 4 }, { span: 4 }, { span: 4 }] },
       { cols: 12, slots: [{ span: 4 }, { span: 4 }, { span: 4 }] },
     ],
-    defaults: ['product', 'look', 'image', 'video'],
   },
   {
     id: 'TYPE-13+1', name: 'TYPE-13+1', system: false, category: 'Эдиториал',
@@ -102,13 +92,11 @@ const TYPE_LIBRARY = [
       { cols: 12, slots: [{ span: 3 }, { span: 3 }, { span: 3 }, { span: 3 }] },
       { cols: 12, slots: [{ span: 4 }, { span: 4 }, { span: 4 }] },
     ],
-    defaults: ['product', 'look', 'image', 'video', 'svg'],
   },
   {
     id: 'PROMO-BLOCK', name: 'Промо-блок', system: false, category: 'Креативные',
     description: 'Кастомный промо-тайп',
     containers: [{ cols: 12, slots: [{ span: 3 }, { span: 3 }, { span: 3 }, { span: 3 }] }],
-    defaults: ['image', 'video', 'svg'],
   },
 ];
 
@@ -136,14 +124,13 @@ const money = (value) => `${new Intl.NumberFormat('ru-RU').format(value)} ₽`;
 
 function emptyPins() { return {}; }
 
-function initialSection(typeId, title, allowed, pins = {}, mode = 'manual') {
+function initialSection(typeId, title, pins = {}, mode = 'manual') {
   const type = TYPE_LIBRARY.find((t) => t.id === typeId);
   return {
     id: `S-${typeId}-${Math.random().toString(36).slice(2, 8)}`,
     title,
     typeId,
     template: type,
-    allowed,
     pins,
     rules: { ...DEFAULT_RULES, mode },
     enabled: true,
@@ -151,13 +138,9 @@ function initialSection(typeId, title, allowed, pins = {}, mode = 'manual') {
 }
 
 const INITIAL_SECTIONS = [
-  initialSection('TYPE-3', 'Новинки', ['product'], { 0: 'P-101', 1: 'P-103', 2: 'P-105' }, 'hybrid'),
-  initialSection('TYPE-13', 'Editorial · Summer', ['product', 'look', 'image', 'video'], { 0: 'L-01', 1: 'P-102', 2: 'M-01', 3: 'P-104', 4: 'M-02', 5: 'P-106' }, 'manual'),
+  initialSection('TYPE-3', 'Новинки', { 0: 'P-101', 1: 'P-103', 2: 'P-105' }, 'hybrid'),
+  initialSection('TYPE-13', 'Editorial · Summer', { 0: 'L-01', 1: 'P-102', 2: 'M-01', 3: 'P-104', 4: 'M-02', 5: 'P-106' }, 'manual'),
 ];
-
-function allowedText(allowed) {
-  return allowed.map((x) => CONTENT_LABELS[x]).join(' · ');
-}
 
 function entityKind(id) {
   if (id?.startsWith('P-')) return 'product';
@@ -172,7 +155,6 @@ function resolveSection(section, region) {
   const used = new Set();
   const eligible = PRODUCTS
     .filter((p) =>
-      section.allowed.includes('product') &&
       (section.rules.collection === 'Все' || p.collection === section.rules.collection) &&
       (p.stock[region] ?? 0) >= Number(section.rules.stockMin) &&
       p.l7d >= Number(section.rules.l7dMin))
@@ -185,9 +167,6 @@ function resolveSection(section, region) {
       const entity = getEntity(pinId);
       if (!entity) return { index, status: 'empty', entity: null };
       const kind = entityKind(pinId);
-      if (!section.allowed.includes(kind)) {
-        return { index, status: 'blocked', entity: null, warning: 'Тип контента запрещён политикой' };
-      }
       if (kind === 'product') {
         const available = (entity.stock[region] ?? 0) >= Number(section.rules.stockMin);
         if (!available && section.rules.oos === 'collapse') return { index, status: 'collapsed', entity: null, warning: 'OOS → collapse' };
@@ -204,7 +183,7 @@ function resolveSection(section, region) {
       return { index, status: 'pin', entity };
     }
 
-    if (section.rules.mode === 'manual' || !section.allowed.includes('product')) {
+    if (section.rules.mode === 'manual') {
       return { index, status: 'empty', entity: null };
     }
 
@@ -265,8 +244,7 @@ function MediaCard({ entity, compact = false }) {
   );
 }
 
-function Slot({ slot, allowed, region, onDrop, onUnpin }) {
-  const label = allowedText(allowed);
+function Slot({ slot, region, onDrop, onUnpin }) {
   return (
     <div
       className={`lego-slot ${slot.entity ? 'filled' : ''} ${slot.status}`}
@@ -290,7 +268,7 @@ function Slot({ slot, allowed, region, onDrop, onUnpin }) {
         <div className="empty-slot-state">
           <Plus size={20}/>
           <strong>Пустой слот</strong>
-          <span>Разрешено: {label}</span>
+          <span>Товар · Образ · Медиа</span>
         </div>
       )}
     </div>
@@ -317,10 +295,6 @@ function SectionCanvas({ section, region, selected, onSelect, onPin, onUnpin }) 
           <MoreHorizontal size={17}/>
         </div>
       </div>
-      <div className="section-policy-line">
-        <span>Политика контента</span>
-        <b>{allowedText(section.allowed)}</b>
-      </div>
       <div className="section-containers">
         {section.template.containers.map((container, ci) => (
           <div className="section-container" key={ci}>
@@ -332,7 +306,6 @@ function SectionCanvas({ section, region, selected, onSelect, onPin, onUnpin }) 
                   <div key={si} style={{ gridColumn: `span ${shape.span}`, gridRow: shape.rows ? `span ${shape.rows}` : undefined }}>
                     <Slot
                       slot={slot}
-                      allowed={section.allowed}
                       region={region}
                       onDrop={(e) => onDrop(e, slot.index)}
                       onUnpin={() => onUnpin(section.id, slot.index)}
@@ -352,15 +325,6 @@ function AddTypeModal({ open, onClose, onAdd }) {
   const [category, setCategory] = useState('Товары');
   const [selectedTypeId, setSelectedTypeId] = useState('TYPE-1');
   const selectedType = TYPE_LIBRARY.find((t) => t.id === selectedTypeId) || TYPE_LIBRARY[0];
-  const [allowed, setAllowed] = useState(selectedType.defaults);
-
-  const chooseType = (type) => {
-    setSelectedTypeId(type.id);
-    setAllowed(type.defaults);
-  };
-  const toggleAllowed = (kind) => {
-    setAllowed((prev) => prev.includes(kind) ? prev.filter((x) => x !== kind) : [...prev, kind]);
-  };
 
   if (!open) return null;
   const categories = ['Товары', 'Креативные', 'Эдиториал', 'Главная'];
@@ -368,7 +332,7 @@ function AddTypeModal({ open, onClose, onAdd }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="type-library-modal" onClick={(e) => e.stopPropagation()}>
         <div className="type-modal-head">
-          <div><span>БИБЛИОТЕКА ТАЙПОВ</span><h2>Добавить секцию</h2><p>Тайп задаёт структуру секции. Контент в новый тайп не подставляется автоматически.</p></div>
+          <div><span>БИБЛИОТЕКА ТАЙПОВ</span><h2>Добавить секцию</h2><p>Тайп задаёт геометрию секции. Новая секция создаётся с пустыми слотами.</p></div>
           <button onClick={onClose}><X size={19}/></button>
         </div>
         <div className="type-library-body">
@@ -379,7 +343,7 @@ function AddTypeModal({ open, onClose, onAdd }) {
             <div className="type-grid-title"><strong>{category}</strong><span>System / Custom</span></div>
             <div className="type-card-grid">
               {TYPE_LIBRARY.filter((t) => t.category === category).map((type) => (
-                <button className={`type-card ${selectedTypeId === type.id ? 'selected' : ''}`} key={type.id} onClick={() => chooseType(type)}>
+                <button className={`type-card ${selectedTypeId === type.id ? 'selected' : ''}`} key={type.id} onClick={() => setSelectedTypeId(type.id)}>
                   <div className="type-card-top"><strong>{type.name}</strong><span>{type.system ? 'SYSTEM' : 'CUSTOM'}</span></div>
                   <TypePreview type={type} compact />
                   <p>{type.description}</p>
@@ -391,22 +355,15 @@ function AddTypeModal({ open, onClose, onAdd }) {
           <aside className="type-policy-panel">
             <div className="policy-head"><span>ВЫБРАННЫЙ ТАЙП</span><strong>{selectedType.name}</strong></div>
             <TypePreview type={selectedType}/>
-            <div className="policy-block">
-              <label>Разрешённые блоки контента</label>
-              <p>Политика применяется ко всем слотам секции. В слот можно положить только разрешённую сущность.</p>
-              <div className="policy-checks">
-                {Object.keys(CONTENT_LABELS).map((kind) => (
-                  <button key={kind} className={allowed.includes(kind) ? 'on' : ''} onClick={() => toggleAllowed(kind)}>
-                    <span>{allowed.includes(kind) ? <Check size={14}/> : null}</span>{CONTENT_LABELS[kind]}
-                  </button>
-                ))}
-              </div>
+            <div className="type-policy-note">
+              <Layers3 size={16}/>
+              <span><b>Все типы контента доступны во всех слотах:</b> товары, образы, изображения, видео и SVG.</span>
             </div>
             <div className="type-policy-note">
-              <Settings size={16}/>
-              <span><b>Новая секция создаётся пустой.</b> AUTO/HYBRID можно включить после добавления.</span>
+              <Plus size={16}/>
+              <span>После добавления секция остаётся пустой до ручного наполнения или включения AUTO/HYBRID.</span>
             </div>
-            <button className="add-type-primary" disabled={!allowed.length} onClick={() => onAdd(selectedType, allowed)}>
+            <button className="add-type-primary" onClick={() => onAdd(selectedType)}>
               <Plus size={16}/> Добавить {selectedType.name}
             </button>
           </aside>
@@ -450,8 +407,8 @@ export default function AppV2() {
 
   const updateSection = (id, updater) => setSections((prev) => prev.map((s) => s.id === id ? updater(s) : s));
 
-  const addType = (type, allowed) => {
-    const next = initialSection(type.id, `Новая секция · ${type.id}`, allowed, emptyPins(), 'manual');
+  const addType = (type) => {
+    const next = initialSection(type.id, `Новая секция · ${type.id}`, emptyPins(), 'manual');
     setSections((prev) => [...prev, next]);
     setSelectedId(next.id);
     setRightTab('content');
@@ -461,14 +418,8 @@ export default function AppV2() {
   };
 
   const pinEntity = (sectionId, slotIndex, entityId) => {
-    const section = sections.find((s) => s.id === sectionId);
     const kind = entityKind(entityId);
-    if (!section || !kind) return;
-    if (!section.allowed.includes(kind)) {
-      setToast(`Нельзя добавить ${CONTENT_LABELS[kind]}: запрещено политикой ${section.typeId}`);
-      setTimeout(() => setToast(''), 2200);
-      return;
-    }
+    if (!kind) return;
     updateSection(sectionId, (s) => ({ ...s, pins: { ...s.pins, [slotIndex]: entityId } }));
     setToast(`Слот ${slotIndex + 1}: ${CONTENT_LABELS[kind]} закреплён`);
     setTimeout(() => setToast(''), 1600);
@@ -502,12 +453,6 @@ export default function AppV2() {
     if (contentTab === 'look') return CONTENT.filter((x) => x.kind === 'look');
     return CONTENT.filter((x) => ['image', 'video', 'svg'].includes(x.kind));
   }, [selected, contentTab, query]);
-
-  const tabAllowed = (kind) => {
-    if (!selected) return false;
-    if (kind === 'media') return selected.allowed.some((x) => ['image', 'video', 'svg'].includes(x));
-    return selected.allowed.includes(kind);
-  };
 
   return (
     <div className="lego-app">
@@ -563,7 +508,7 @@ export default function AppV2() {
         <section className="canvas-shell">
           <div className={`storefront-frame ${device}`}>
             <div className="lime-store-header"><b>LIME</b><nav><span>НОВИНКИ</span><span>ОДЕЖДА</span><span>ОБУВЬ</span><span>СУМКИ</span><span>SALE</span></nav><div><Search size={17}/><Heart size={17}/><ShoppingBag size={17}/></div></div>
-            <div className="canvas-note"><Layers3 size={15}/><span>Секция = тайп. Геометрия фиксируется шаблоном; наполнение контролируется политиками.</span></div>
+            <div className="canvas-note"><Layers3 size={15}/><span>Секция = тайп. Геометрия задаётся шаблоном; любой слот может содержать товар, образ или медиа.</span></div>
             {resolved.map((section) => (
               <SectionCanvas
                 key={section.id}
@@ -592,30 +537,25 @@ export default function AppV2() {
             </div>
 
             {rightTab === 'content' && <div className="settings-scroll">
-              <div className="info-card"><Pin size={15}/><span>Перетащите сущность в пустой слот. Контент вне политики тайпа будет отклонён.</span></div>
-              <div className="policy-summary"><span>РАЗРЕШЕНО</span><strong>{allowedText(selected.allowed)}</strong></div>
+              <div className="info-card"><Pin size={15}/><span>Перетащите в любой пустой слот товар, образ, изображение, видео или SVG.</span></div>
               <div className="content-tabs">
-                <button disabled={!tabAllowed('product')} className={contentTab === 'product' ? 'active' : ''} onClick={() => setContentTab('product')}>Товары</button>
-                <button disabled={!tabAllowed('look')} className={contentTab === 'look' ? 'active' : ''} onClick={() => setContentTab('look')}>Образы</button>
-                <button disabled={!tabAllowed('media')} className={contentTab === 'media' ? 'active' : ''} onClick={() => setContentTab('media')}>Медиа</button>
+                <button className={contentTab === 'product' ? 'active' : ''} onClick={() => setContentTab('product')}>Товары</button>
+                <button className={contentTab === 'look' ? 'active' : ''} onClick={() => setContentTab('look')}>Образы</button>
+                <button className={contentTab === 'media' ? 'active' : ''} onClick={() => setContentTab('media')}>Медиа</button>
               </div>
               {contentTab === 'product' && <div className="panel-search"><Search size={15}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Название / ID"/></div>}
               <div className="library-items">
-                {visibleLibrary.map((entity) => {
-                  const kind = 'price' in entity ? 'product' : entity.kind;
-                  const allowed = selected.allowed.includes(kind);
-                  return (
-                    <div
-                      key={entity.id}
-                      className={`library-entity ${allowed ? '' : 'disabled'}`}
-                      draggable={allowed}
-                      onDragStart={(e) => e.dataTransfer.setData('text/plain', entity.id)}
-                    >
-                      {'price' in entity ? <ProductCard product={entity} region={region} compact/> : <MediaCard entity={entity} compact/>}
-                      <GripVertical size={14}/>
-                    </div>
-                  );
-                })}
+                {visibleLibrary.map((entity) => (
+                  <div
+                    key={entity.id}
+                    className="library-entity"
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', entity.id)}
+                  >
+                    {'price' in entity ? <ProductCard product={entity} region={region} compact/> : <MediaCard entity={entity} compact/>}
+                    <GripVertical size={14}/>
+                  </div>
+                ))}
               </div>
             </div>}
 
@@ -625,7 +565,7 @@ export default function AppV2() {
                 <div className="segmented">
                   {['manual', 'hybrid', 'auto'].map((mode) => <button key={mode} className={selected.rules.mode === mode ? 'active' : ''} onClick={() => updateSection(selected.id, (s) => ({ ...s, rules: { ...s.rules, mode } }))}>{mode.toUpperCase()}</button>)}
                 </div>
-                <p>Новый тайп создаётся в MANUAL, поэтому все слоты изначально пустые. AUTO/HYBRID запускает товарное наполнение только если политика разрешает товары.</p>
+                <p>Новый тайп создаётся в MANUAL, поэтому все слоты изначально пустые. AUTO/HYBRID может автоматически наполнять товарные позиции, а ручной drag-and-drop доступен для любого контента.</p>
               </div>
               <div className="setting-block">
                 <label>Товарные ограничения</label>
@@ -650,15 +590,8 @@ export default function AppV2() {
                 <div className="type-stats"><span>{selected.template.containers.length} контейнер(а)</span><span>{slotCount(selected.template)} ячеек</span></div>
               </div>
               <div className="setting-block">
-                <label>Политика контента</label>
-                <p>Для существующей секции можно менять разрешённые блоки. Сущность, которая перестала быть разрешена, не будет показана.</p>
-                <div className="policy-checks inline">
-                  {Object.keys(CONTENT_LABELS).map((kind) => (
-                    <button key={kind} className={selected.allowed.includes(kind) ? 'on' : ''} onClick={() => updateSection(selected.id, (s) => ({ ...s, allowed: s.allowed.includes(kind) ? s.allowed.filter((x) => x !== kind) : [...s.allowed, kind] }))}>
-                      <span>{selected.allowed.includes(kind) ? <Check size={13}/> : null}</span>{CONTENT_LABELS[kind]}
-                    </button>
-                  ))}
-                </div>
+                <label>Контент слотов</label>
+                <p>Во всех слотах по умолчанию доступен весь контент: товары / цветомодели, образы, изображения, видео и SVG.</p>
               </div>
             </div>}
           </> : null}
