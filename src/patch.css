@@ -1,0 +1,19 @@
+.product-layout.center {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.product-layout.center > .drop-slot {
+  flex: 0 1 calc((100% - 50px) / 6);
+  min-width: 125px;
+}
+
+.product-layout.row.center > .drop-slot {
+  flex-basis: calc((100% - 30px) / 4);
+}
+
+.storefront.mobile .product-layout.center > .drop-slot,
+.storefront.mobile .product-layout.row.center > .drop-slot {
+  flex-basis: calc(50% - 5px);
+}
