@@ -4,9 +4,9 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs",
+    "predev": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-catalog.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs",
+    "prebuild": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-catalog.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
