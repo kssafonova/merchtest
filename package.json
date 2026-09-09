@@ -4,9 +4,9 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs && node scripts/visual-merch-panel-v6.mjs && node scripts/fit-handler-v6b.mjs",
+    "predev": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs && node scripts/visual-merch-panel-v6.mjs && node scripts/fit-handler-v6b.mjs && node scripts/site-tree-chrome-v7.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs && node scripts/visual-merch-panel-v6.mjs && node scripts/fit-handler-v6b.mjs",
+    "prebuild": "node scripts/catalog-data.mjs && node scripts/feed-data.mjs && node scripts/prepare-app.mjs && node scripts/fix-content-panel-source.mjs && node scripts/content-panel.mjs && node scripts/section-rules-v3.mjs && node scripts/section-layouts-v2.mjs && node scripts/simplify-builder-v4.mjs && node scripts/runtime-hotfix-v5.mjs && node scripts/visual-merch-panel-v6.mjs && node scripts/fit-handler-v6b.mjs && node scripts/site-tree-chrome-v7.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
