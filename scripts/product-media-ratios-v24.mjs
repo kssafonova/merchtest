@@ -11,21 +11,23 @@ if (!app.includes(MARKER)) {
   app = app.replace(variantMarker, variantMarker + '\nconst ' + MARKER + ' = true;');
 
   const start = app.indexOf('function ProductMediaVisual(');
-  const endAnchor = '\nconst PRODUCTS = expandColorVariants(CATALOG_PRODUCTS);';
-  const end = app.indexOf(endAnchor, start);
+  const candidateEnds = [
+    '\nconst PRODUCTS = [...expandColorVariants(CATALOG_PRODUCTS), ...FEED_PRODUCTS];',
+    '\nconst PRODUCTS = expandColorVariants(CATALOG_PRODUCTS);',
+  ];
+  const end = candidateEnds.map((anchor) => app.indexOf(anchor, start)).find((index) => index >= 0) ?? -1;
   if (start < 0 || end < 0) throw new Error('PRODUCT_MEDIA_RATIOS_V24: ProductMediaVisual anchors not found');
 
   const replacement = `function RatioMediaImage({ src, alt = '', className = '', loading = 'lazy', ratioMode = 'hero' }) {\n  const [orientation, setOrientation] = useState('portrait');\n  const handleLoad = (event) => {\n    const image = event.currentTarget;\n    setOrientation(image.naturalWidth > image.naturalHeight ? 'landscape' : 'portrait');\n  };\n  return <span className={'product-ratio-frame ' + orientation + ' ' + ratioMode + ' ' + className}><img src={src} alt={alt} loading={loading} onLoad={handleLoad}/></span>;\n}\n\nfunction ProductMediaVisual({ media, alt = '', className = '', loading = 'lazy', ratioMode = 'fill' }) {\n  if (!media) return <div className={'media-placeholder ' + className}><ImageIcon size={28}/></div>;\n  const useRatio = ratioMode === 'hero' || ratioMode === 'thumb';\n  if (typeof media === 'string') {\n    return useRatio ? <RatioMediaImage src={media} alt={alt} className={className} loading={loading} ratioMode={ratioMode}/> : <img className={className} src={media} alt={alt} loading={loading}/>;\n  }\n  if (media.kind === 'atlas') {\n    const x = (Number(media.col || 0) / 29) * 100;\n    const y = (Number(media.row || 0) / 15) * 100;\n    const atlas = <span className={'variant-atlas-frame ' + className} role=\"img\" aria-label={alt} style={{ backgroundImage: 'url(\"' + media.src + '\")', backgroundPosition: x + '% ' + y + '%' }}/>;\n    return useRatio ? <span className={'product-ratio-frame portrait ' + ratioMode}>{atlas}</span> : atlas;\n  }\n  if (media.src) {\n    return useRatio ? <RatioMediaImage src={media.src} alt={alt} className={className} loading={loading} ratioMode={ratioMode}/> : <img className={className} src={media.src} alt={alt} loading={loading}/>;\n  }\n  return <div className={'media-placeholder ' + className}><ImageIcon size={28}/></div>;\n}\n`;
   app = app.slice(0, start) + replacement + app.slice(end);
 
-  app = app.replace(
-    '<ProductMediaVisual media={media} alt={\'Фото \' + (index + 1)} loading="eager"/>',
-    '<ProductMediaVisual media={media} alt={\'Фото \' + (index + 1)} loading="eager" ratioMode="thumb"/>'
-  );
-  app = app.replace(
-    '<ProductMediaVisual media={activeMedia} alt={entity.name} loading="eager"/>',
-    '<ProductMediaVisual media={activeMedia} alt={entity.name} loading="eager" ratioMode="hero"/>'
-  );
+  const thumbPlain = '<ProductMediaVisual media={media} alt={\'Фото \' + (index + 1)} loading="eager"/>';
+  const thumbRatio = '<ProductMediaVisual media={media} alt={\'Фото \' + (index + 1)} loading="eager" ratioMode="thumb"/>';
+  if (app.includes(thumbPlain)) app = app.replace(thumbPlain, thumbRatio);
+
+  const heroPlain = '<ProductMediaVisual media={activeMedia} alt={entity.name} loading="eager"/>';
+  const heroRatio = '<ProductMediaVisual media={activeMedia} alt={entity.name} loading="eager" ratioMode="hero"/>';
+  if (app.includes(heroPlain)) app = app.replace(heroPlain, heroRatio);
 
   writeFileSync(appPath, app);
 }
