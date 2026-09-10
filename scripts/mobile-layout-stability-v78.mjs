@@ -2,8 +2,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const appPath = 'src/AppV3.jsx';
 const cssPath = 'src/appv3.css';
+const baseCssPath = 'src/type-builder.css';
 let app = readFileSync(appPath, 'utf8');
 let css = readFileSync(cssPath, 'utf8');
+let baseCss = readFileSync(baseCssPath, 'utf8');
 const MARKER = 'MOBILE_LAYOUT_STABILITY_V78';
 
 if (!app.includes(MARKER)) {
@@ -13,21 +15,23 @@ if (!app.includes(MARKER)) {
   writeFileSync(appPath, app);
 }
 
-// Final CSS sanitation. Earlier generations contain a mobile declaration
-// `grid-column: auto !important` which wins over SectionCanvas inline gridArea
-// and collapses every canonical mobile slot to one column. Remove it globally
-// at the final stage; the only unrelated small-screen filter case is restored
-// below with an explicit scoped rule.
-css = css.replace(/grid-column\s*:\s*auto\s*!important\s*;?/g, '');
+function cleanLegacyMobileCss(source) {
+  source = source.replace(/grid-column\s*:\s*auto\s*!important\s*;?/g, '');
+  source = source.replace(/(\.storefront-frame\.mobile\s+\.slot-grid\s*\{)([^}]*)\}/g, (full, head, body) => {
+    return head + body.replace(/grid-template-columns\s*:\s*1fr\s*!important\s*;?/g, '') + '}';
+  });
+  source = source.replace(/(\.storefront-frame\.mobile\s+\.lego-slot\s*\{)([^}]*)\}/g, (full, head, body) => {
+    return head + body.replace(/min-height\s*:\s*190px\s*;?/g, '') + '}';
+  });
+  return source;
+}
 
-// Old one-column storefront mobile rule is also obsolete. V73/V78 own the
-// mobile grid and always render it as four columns.
-css = css.replace(/(\.storefront-frame\.mobile\s+\.slot-grid\s*\{)([^}]*)\}/g, (full, head, body) => {
-  return head + body.replace(/grid-template-columns\s*:\s*1fr\s*!important\s*;?/g, '') + '}';
-});
-css = css.replace(/(\.storefront-frame\.mobile\s+\.lego-slot\s*\{)([^}]*)\}/g, (full, head, body) => {
-  return head + body.replace(/min-height\s*:\s*190px\s*;?/g, '') + '}';
-});
+// The obsolete mobile rules exist in the original type-builder stylesheet,
+// while later responsive patches live in appv3.css. Sanitize both sources so
+// no !important declaration can override the explicit V73 slot gridArea.
+css = cleanLegacyMobileCss(css);
+baseCss = cleanLegacyMobileCss(baseCss);
+writeFileSync(baseCssPath, baseCss);
 
 if (!css.includes('/* mobile-layout-stability-v78 */')) {
   css += String.raw`
@@ -108,4 +112,4 @@ if (!css.includes('/* mobile-layout-stability-v78 */')) {
 }
 
 writeFileSync(cssPath, css);
-console.log('V78 applied: mobile section slots now respect canonical 4-column V73 grid spans and rows');
+console.log('V78 applied: mobile section slots now respect canonical 4-column V73 grid spans and rows; legacy base CSS removed');
