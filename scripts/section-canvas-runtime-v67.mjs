@@ -18,3 +18,5 @@ if (!app.includes(MARKER)) {
 
 console.log('V67 applied: SectionCanvas V58 runtime context guaranteed in final app');
 await import('./repeat-combo-visible-v68.mjs');
+await import('./section-authoring-unified-v69.mjs');
+await import('./mobile-canvas-stability-v70.mjs');
