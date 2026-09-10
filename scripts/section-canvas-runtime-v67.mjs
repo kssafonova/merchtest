@@ -17,3 +17,4 @@ if (!app.includes(MARKER)) {
 }
 
 console.log('V67 applied: SectionCanvas V58 runtime context guaranteed in final app');
+await import('./repeat-combo-visible-v68.mjs');
