@@ -26,3 +26,4 @@ if (!app.includes(MARKER)) {
 }
 
 console.log('V75 runtime context hotfix applied: section canvas runtime is shared through globalThis');
+await import('./automation-editor-reference-v76.mjs');
