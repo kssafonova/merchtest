@@ -13,31 +13,21 @@ if (!app.includes(MARKER)) {
   writeFileSync(appPath, app);
 }
 
-function stripLegacyProperty(ruleSource, selectorRx, propertyRx) {
-  return ruleSource.replace(selectorRx, (full, head, body) => {
-    const nextBody = body.replace(propertyRx, '');
-    return head + nextBody + '}';
-  });
-}
+// Final CSS sanitation. Earlier generations contain a mobile declaration
+// `grid-column: auto !important` which wins over SectionCanvas inline gridArea
+// and collapses every canonical mobile slot to one column. Remove it globally
+// at the final stage; the only unrelated small-screen filter case is restored
+// below with an explicit scoped rule.
+css = css.replace(/grid-column\s*:\s*auto\s*!important\s*;?/g, '');
 
-// Remove obsolete pre-responsive mobile declarations even when their blocks
-// contain additional declarations or different whitespace. They must never
-// override the explicit V73 gridArea written per slot.
-css = stripLegacyProperty(
-  css,
-  /(\.storefront-frame\.mobile\s+\.slot-grid\s*\{)([^}]*)\}/g,
-  /grid-template-columns\s*:\s*1fr\s*!important\s*;?/g,
-);
-css = stripLegacyProperty(
-  css,
-  /(\.storefront-frame\.mobile\s+\.slot-grid\s*>\s*div\s*\{)([^}]*)\}/g,
-  /grid-column\s*:\s*auto\s*!important\s*;?/g,
-);
-css = stripLegacyProperty(
-  css,
-  /(\.storefront-frame\.mobile\s+\.lego-slot\s*\{)([^}]*)\}/g,
-  /min-height\s*:\s*190px\s*;?/g,
-);
+// Old one-column storefront mobile rule is also obsolete. V73/V78 own the
+// mobile grid and always render it as four columns.
+css = css.replace(/(\.storefront-frame\.mobile\s+\.slot-grid\s*\{)([^}]*)\}/g, (full, head, body) => {
+  return head + body.replace(/grid-template-columns\s*:\s*1fr\s*!important\s*;?/g, '') + '}';
+});
+css = css.replace(/(\.storefront-frame\.mobile\s+\.lego-slot\s*\{)([^}]*)\}/g, (full, head, body) => {
+  return head + body.replace(/min-height\s*:\s*190px\s*;?/g, '') + '}';
+});
 
 if (!css.includes('/* mobile-layout-stability-v78 */')) {
   css += String.raw`
@@ -71,7 +61,7 @@ if (!css.includes('/* mobile-layout-stability-v78 */')) {
   justify-items:stretch!important;
   box-sizing:border-box!important;
 }
-/* DO NOT set grid-column/grid-row here: inline gridArea owns canonical placement. */
+/* DO NOT set grid-column/grid-row: inline gridArea owns canonical placement. */
 .storefront-frame.mobile .builder-section.layout-v2 .slot-grid>.v2-slot-wrap{
   min-width:0!important;
   max-width:none!important;
@@ -103,7 +93,6 @@ if (!css.includes('/* mobile-layout-stability-v78 */')) {
   display:block!important;
   object-fit:cover!important;
 }
-/* Narrow authoring controls scroll instead of changing section geometry. */
 .storefront-frame.mobile .section-author-toolbar-v57,
 .storefront-frame.mobile .section-select-toggle-v60{box-sizing:border-box!important}
 .storefront-frame.mobile .section-author-toolbar-v57{
@@ -113,6 +102,8 @@ if (!css.includes('/* mobile-layout-stability-v78 */')) {
   scrollbar-width:none!important;
 }
 .storefront-frame.mobile .section-author-toolbar-v57::-webkit-scrollbar{display:none!important}
+/* Restore the unrelated filter layout that previously used grid-column:auto. */
+@media (max-width:390px){.simple-filter-actions>span{grid-column:auto!important}}
 `;
 }
 
