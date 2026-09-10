@@ -123,3 +123,4 @@ if(!css.includes('/* repeat-combo-visible-v68 */')){
 }
 
 console.log('V68 applied: repeat-section combinations now generate visible canvas sections until the candidate pool is covered');
+await import('./section-authoring-unified-v69.mjs');
