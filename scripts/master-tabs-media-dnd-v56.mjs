@@ -1,0 +1,63 @@
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+
+const sourcePath = 'scripts/master-tabs-media-dnd-v55.mjs';
+const runtimePath = 'scripts/.master-tabs-media-dnd-v56-runtime.mjs';
+let source = readFileSync(sourcePath, 'utf8').replaceAll('MASTER_TABS_MEDIA_DND_V55', 'MASTER_TABS_MEDIA_DND_V56');
+
+const blockStart = source.indexOf('  // STOREFRONT: every filled slot is draggable.');
+const blockEnd = source.indexOf('\n  writeFileSync(appPath, app);', blockStart);
+if (blockStart < 0 || blockEnd < 0) throw new Error('MASTER_TABS_MEDIA_DND_V56: storefront patch block missing');
+
+const fixedStorefrontPatch = String.raw`  // STOREFRONT: preserve the current Slot API and layer cross-section DnD on top.
+  app = replaceFunction(app, 'Slot', (chunk) => {
+    if (!/function Slot\(\{[^)]*sectionId/.test(chunk)) {
+      chunk = chunk.replace('function Slot({', 'function Slot({ sectionId,');
+    }
+    const dropNeedle = ' onDrop={onDrop}>';
+    if (!chunk.includes(dropNeedle)) throw new Error(MARKER + ': current Slot drop anchor missing');
+    const dndProps = String.raw\` draggable={Boolean(slot.entity)} onDragStart={(event) => { if (!slot.entity) return; event.stopPropagation(); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('application/x-storefront-slot-v55', JSON.stringify({ sectionId, slotIndex: slot.index, entityId: slot.entity.id, status: slot.status })); event.dataTransfer.setData('text/plain', slot.entity.id); }} onDragEnter={(event) => { event.preventDefault(); event.currentTarget.classList.add('slot-drag-over-v55'); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.classList.remove('slot-drag-over-v55'); }} onDrop={(event) => { event.currentTarget.classList.remove('slot-drag-over-v55'); onDrop(event); }}>\`;
+    chunk = chunk.replace(dropNeedle, dndProps);
+    return chunk;
+  });
+
+  app = replaceFunction(app, 'SectionCanvas', (chunk) => {
+    const dropPattern = /  const onDrop = \(event, slotIndex\) => \{[\s\S]*?\};/;
+    if (!dropPattern.test(chunk)) throw new Error(MARKER + ': SectionCanvas onDrop anchor missing');
+    chunk = chunk.replace(dropPattern, String.raw\`  const onDrop = (event, slotIndex) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const storefrontPayload = event.dataTransfer.getData('application/x-storefront-slot-v55');
+    if (storefrontPayload) {
+      try {
+        const source = JSON.parse(storefrontPayload);
+        if (source.sectionId === section.id && Number(source.slotIndex) === Number(slotIndex)) return;
+        const targetSlot = (section.resolvedSlots || []).find((item) => Number(item.index) === Number(slotIndex));
+        const targetEntityId = targetSlot?.entity?.id || null;
+        if (targetEntityId) onPin(source.sectionId, Number(source.slotIndex), targetEntityId);
+        else onUnpin(source.sectionId, Number(source.slotIndex));
+        onPin(section.id, Number(slotIndex), source.entityId);
+        return;
+      } catch (error) {
+        console.warn('Не удалось перенести слот', error);
+      }
+    }
+    const id = event.dataTransfer.getData('text/plain');
+    if (id) onPin(section.id, slotIndex, id);
+  };\`);
+    if (!chunk.includes('sectionId={section.id}')) {
+      chunk = chunk.replaceAll('<Slot slot={slot}', '<Slot sectionId={section.id} slot={slot}');
+    }
+    return chunk;
+  });
+`;
+
+source = source.slice(0, blockStart) + fixedStorefrontPatch + source.slice(blockEnd);
+writeFileSync(runtimePath, source);
+try {
+  execFileSync(process.execPath, [runtimePath], { stdio: 'inherit' });
+} finally {
+  try { unlinkSync(runtimePath); } catch {}
+}
+
+console.log('Master tabs + media + cross-section DnD V56 compatibility wrapper applied');
