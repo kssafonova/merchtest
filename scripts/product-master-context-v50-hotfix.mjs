@@ -14,3 +14,4 @@ app = app.replaceAll('PRODUCT_MASTER_CONTEXT_V50 = { pageSections, siteTrees, lo
 
 writeFileSync(appPath, app);
 console.log('Product master context V50 hotfix applied: runtime context separated from build marker');
+// Pages retry marker: V50 production deploy.
