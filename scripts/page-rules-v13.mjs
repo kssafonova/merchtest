@@ -6,10 +6,12 @@ let app = readFileSync(appPath, 'utf8');
 const MARKER = 'PAGE_RULES_V13';
 
 if (!app.includes(MARKER)) {
-  const defaultRulesOld = "const DEFAULT_RULES = { conditionLogic: 'AND', conditions: [], sortBy: 'l7d_desc', dedupe: true, oos: 'fallback', emptyBehavior: 'collapse-center', ttl: 15 };";
-  const defaultRulesNew = "const DEFAULT_RULES = { conditionLogic: 'AND', conditions: [], sortBy: 'l7d_desc', dedupe: true, oos: 'fallback', emptyBehavior: 'collapse-center', ttl: 15, inheritPageRules: true };";
-  if (!app.includes(defaultRulesOld)) throw new Error('PAGE_RULES_V13: DEFAULT_RULES anchor not found');
-  app = app.replace(defaultRulesOld, defaultRulesNew);
+  const defaultRulesMatch = app.match(/const DEFAULT_RULES = \{[^;]+\};/);
+  if (!defaultRulesMatch) throw new Error('PAGE_RULES_V13: DEFAULT_RULES not found');
+  if (!defaultRulesMatch[0].includes('inheritPageRules')) {
+    const patchedDefaultRules = defaultRulesMatch[0].replace(/\s*\};$/, ', inheritPageRules: true };');
+    app = app.replace(defaultRulesMatch[0], patchedDefaultRules);
+  }
 
   const engineMarker = 'const SECTION_RULE_ENGINE_V3 = true;';
   if (!app.includes(engineMarker)) throw new Error('PAGE_RULES_V13: SECTION_RULE_ENGINE_V3 anchor not found');
@@ -29,11 +31,18 @@ if (!app.includes(MARKER)) {
 function resolveSection(section, region, pageContext = null) {
   const rules = { ...DEFAULT_RULES, ...(section.rules || {}) };
   const conditions = validConditions(rules);
+  const useSectionRules = rules.fillMode === 'rules';
   const inheritPageRules = Boolean(pageContext?.enabled && rules.inheritPageRules !== false);
   const candidateBase = inheritPageRules ? pageContext.pool : PRODUCTS;
-  const allCandidates = conditions.length
-    ? candidateBase.filter((product) => productMatchesSectionRules(product, rules, region))
-    : (inheritPageRules ? [...candidateBase] : []);
+  const applySectionConditions = useSectionRules && conditions.length > 0;
+  const needsCandidates = inheritPageRules || useSectionRules || rules.oos === 'fallback';
+  const allCandidates = !needsCandidates
+    ? []
+    : applySectionConditions
+      ? candidateBase.filter((product) => productMatchesSectionRules(product, rules, region))
+      : inheritPageRules
+        ? [...candidateBase]
+        : [];
   const availableCandidates = sortCandidates(allCandidates.filter((product) => (product.stock?.[region] ?? product.stockValue ?? 0) > 0), rules, region);
   const used = new Set();
   const blockedByPage = (product) => inheritPageRules && pageContext.dedupeAcrossSections && pageContext.usedAcross.has(product.id);
@@ -46,7 +55,7 @@ function resolveSection(section, region, pageContext = null) {
     const pinId = section.pins[index];
     if (pinId) {
       const entity = getEntity(pinId);
-      if (!entity) return { index, status: 'empty', entity: null };
+      if (!entity) return { index, status: 'empty', entity: null, warning: 'Контент не найден' };
       if (entityKind(pinId) !== 'product') return { index, status: 'pin', entity, origin: 'manual' };
       const available = (entity.stock?.[region] ?? entity.stockValue ?? 0) > 0;
       if (available) {
@@ -59,28 +68,29 @@ function resolveSection(section, region, pageContext = null) {
         rememberAcrossPage(entity);
         return { index, status: 'pin', entity, warning: 'Нет в наличии', origin: 'manual' };
       }
-      if (rules.oos === 'collapse') return emptySlotResult(index, { ...rules, emptyBehavior: rules.emptyBehavior === 'keep' ? 'collapse' : rules.emptyBehavior }, 'Нет в наличии');
+      if (rules.oos === 'collapse') return emptySlotResult(index, { ...rules, emptyBehavior: 'collapse-center' }, 'Товар скрыт: нет в наличии');
       if (rules.oos === 'fallback') {
+        if (!inheritPageRules && (!useSectionRules || !conditions.length)) {
+          used.add(entity.id);
+          return { index, status: 'pin', entity, warning: 'Для автозамены нужны правила отбора', origin: 'manual' };
+        }
         const replacement = nextAvailable();
         if (replacement) {
           used.add(replacement.id);
           rememberAcrossPage(replacement);
-          return { index, status: 'auto', entity: replacement, warning: 'Автозамена', origin: inheritPageRules ? 'page+section' : 'section' };
-        }
-        if (!conditions.length && !inheritPageRules) {
-          used.add(entity.id);
-          return { index, status: 'pin', entity, warning: 'Нет правил для замены', origin: 'manual' };
+          return { index, status: 'auto', entity: replacement, warning: 'Автозамена', origin: inheritPageRules ? (applySectionConditions ? 'page+section' : 'page') : 'section' };
         }
         return emptySlotResult(index, rules, 'Замена не найдена');
       }
     }
 
-    if (!conditions.length && !inheritPageRules) return { index, status: 'empty', entity: null };
+    if (!inheritPageRules && !useSectionRules) return { index, status: 'empty', entity: null };
+    if (!inheritPageRules && useSectionRules && !conditions.length) return { index, status: 'empty', entity: null, warning: 'Настройте правила отбора' };
     const next = nextAvailable();
     if (!next) return emptySlotResult(index, rules, 'Кандидаты закончились');
     used.add(next.id);
     rememberAcrossPage(next);
-    return { index, status: 'auto', entity: next, origin: inheritPageRules ? (conditions.length ? 'page+section' : 'page') : 'section' };
+    return { index, status: 'auto', entity: next, origin: inheritPageRules ? (applySectionConditions ? 'page+section' : 'page') : 'section' };
   });
 
   return { ...section, rules, inheritPageRules, resolvedSlots: slots, candidates: allCandidates, availableCandidates };
@@ -191,9 +201,9 @@ function resolvePageSections(sections, region, pageRules) {
   if (!app.includes(coverageButton)) throw new Error('PAGE_RULES_V13: coverage button anchor not found');
   app = app.replace(coverageButton, `<button className={pageRules.enabled ? 'page-rules-toolbar active' : 'page-rules-toolbar'} onClick={() => setShowPageRules(true)}><Sparkles size={16}/> Правила страницы</button>${coverageButton}`);
 
-  const sectionEditorAnchor = 'return <div className="section-rules-editor">';
-  if (!app.includes(sectionEditorAnchor)) throw new Error('PAGE_RULES_V13: SectionRuleBuilder anchor not found');
-  app = app.replace(sectionEditorAnchor, `return <div className="section-rules-editor"><div className="page-inheritance-control"><label><input type="checkbox" checked={rules.inheritPageRules !== false} onChange={(event) => updateRules({ inheritPageRules: event.target.checked })}/><span><strong>Наследовать правила страницы</strong><small>Сначала PAGE pool, затем условия этой секции. Отключите, если секция должна жить только по собственным правилам.</small></span></label></div>`);
+  const sectionSettingsAnchor = 'return <div className="section-settings-v11">';
+  if (!app.includes(sectionSettingsAnchor)) throw new Error('PAGE_RULES_V13: SectionSettingsPanel anchor not found');
+  app = app.replace(sectionSettingsAnchor, `return <div className="section-settings-v11"><div className="page-inheritance-control"><label><input type="checkbox" checked={rules.inheritPageRules !== false} onChange={(event) => updateRules({ inheritPageRules: event.target.checked })}/><span><strong>Наследовать правила страницы</strong><small>Если правила страницы включены, они задают общий пул. Правила секции дополнительно уточняют его, когда выбран сценарий «По правилам».</small></span></label></div>`);
 
   const canvasMainAnchor = '<div className="main-canvas-label"><LayoutGrid size={15}/><strong>Main</strong><span>{resolved.length} секций</span></div>';
   if (app.includes(canvasMainAnchor)) {
@@ -210,7 +220,7 @@ function resolvePageSections(sections, region, pageRules) {
 let css = readFileSync(cssPath, 'utf8');
 const CSS_MARKER = '/* page-rules-v13 */';
 if (!css.includes(CSS_MARKER)) {
-  css += `\n${CSS_MARKER}\n.page-rules-toolbar.active{background:#1e2329!important;color:#fff!important;border-color:#1e2329!important}.page-rules-backdrop{z-index:100}.page-rules-modal{width:min(1120px,94vw);max-height:92vh;background:#fff;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden}.page-rules-head{display:flex;justify-content:space-between;gap:20px;padding:20px 22px 16px;border-bottom:1px solid #e7e8eb}.page-rules-head>div{max-width:760px}.page-rules-head span,.page-rules-preview>span{display:block;font-size:9px;letter-spacing:.12em;color:#858b94}.page-rules-head h2{font-size:20px;margin:5px 0 7px;font-weight:600}.page-rules-head p{font-size:11px;line-height:1.5;color:#6d737c;margin:0}.page-rules-head>button{border:0;background:none;width:32px;height:32px;display:grid;place-items:center;cursor:pointer}.page-rules-body{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);min-height:0;overflow:hidden}.page-rules-editor-column{padding:14px 16px 30px;overflow:auto}.page-rules-preview{background:#f7f8fa;border-left:1px solid #e5e7ea;padding:16px;overflow:auto}.page-rule-master{border:1px solid #dfe2e6;border-radius:8px;padding:11px 12px;margin-bottom:10px;background:#fbfbfc}.page-rule-master label,.page-rule-check,.page-inheritance-control label{display:flex;align-items:flex-start;gap:9px;cursor:pointer}.page-rule-master input,.page-rule-check input,.page-inheritance-control input{margin-top:2px}.page-rule-master span,.page-rule-check span,.page-inheritance-control span{display:flex;flex-direction:column;gap:2px}.page-rule-master strong,.page-rule-check strong,.page-inheritance-control strong{font-size:10px}.page-rule-master small,.page-rule-check small,.page-inheritance-control small{font-size:9px;color:#777d86;line-height:1.4}.page-rule-field{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center;margin:8px 0}.page-rule-field>span{font-size:9px;color:#666c74}.page-rule-field select{height:32px;border:1px solid #dfe1e5;border-radius:5px;background:#fff;padding:0 7px;font-size:9px}.page-rule-check{padding:10px 0 4px}.page-rule-flow{display:flex;align-items:center;justify-content:space-between;background:#1e2125;color:#fff;border-radius:7px;margin-top:10px;padding:10px 12px}.page-rule-flow b{font-size:8px;letter-spacing:.07em}.page-rule-flow i{font-style:normal;color:#7f858d}.page-rule-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:10px 0 14px}.page-rule-kpis>div{background:#fff;border:1px solid #e1e3e6;border-radius:7px;padding:9px}.page-rule-kpis small,.page-rule-kpis strong{display:block}.page-rule-kpis small{font-size:8px;color:#858a91}.page-rule-kpis strong{font-size:20px;margin-top:3px}.page-section-allocation{display:flex;flex-direction:column;gap:6px}.page-section-allocation>div{display:grid;grid-template-columns:26px 1fr;gap:8px;background:#fff;border:1px solid #e2e4e7;border-radius:7px;padding:8px}.page-section-allocation>div>b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#1e2125;color:#fff;font-size:9px}.page-section-allocation>div>span{min-width:0}.page-section-allocation strong,.page-section-allocation small,.page-section-allocation em{display:block}.page-section-allocation strong{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.page-section-allocation small{font-size:8px;color:#777d86;margin-top:3px}.page-section-allocation em{font-style:normal;font-size:7px;letter-spacing:.06em;color:#555b64;margin-top:5px}.page-reserve-note{margin-top:12px;border:1px solid #dadde1;background:#fff;padding:10px;border-radius:7px}.page-reserve-note strong,.page-reserve-note span{display:block}.page-reserve-note strong{font-size:9px}.page-reserve-note span{font-size:8px;color:#737982;line-height:1.45;margin-top:4px}.page-rules-footer{border-top:1px solid #e5e7ea;padding:11px 16px;display:flex;align-items:center;justify-content:flex-end;gap:12px}.page-rules-footer span{font-size:9px;color:#777d86}.page-rules-footer button{height:32px;background:#1d2024;color:#fff;border:0;border-radius:6px;padding:0 18px;cursor:pointer}.page-inheritance-control{border:1px solid #dde1e5;background:#f8fafc;border-radius:7px;padding:9px 10px;margin-bottom:9px}.main-canvas-label em{margin-left:4px;font-style:normal;font-size:8px;border:1px solid #dfe1e5;border-radius:999px;padding:3px 6px;color:#858a91}.main-canvas-label em.active{background:#1e2329;border-color:#1e2329;color:#fff}@media(max-width:900px){.page-rules-body{grid-template-columns:1fr}.page-rules-preview{border-left:0;border-top:1px solid #e5e7ea}.page-rules-modal{max-height:95vh}.page-rule-field{grid-template-columns:1fr}.page-rule-kpis{grid-template-columns:repeat(3,1fr)}}\n`;
+  css += `\n${CSS_MARKER}\n.page-rules-toolbar.active{background:#1e2329!important;color:#fff!important;border-color:#1e2329!important}.page-rules-backdrop{z-index:100}.page-rules-modal{width:min(1120px,94vw);max-height:92vh;background:#fff;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden}.page-rules-head{display:flex;justify-content:space-between;gap:20px;padding:20px 22px 16px;border-bottom:1px solid #e7e8eb}.page-rules-head>div{max-width:760px}.page-rules-head span,.page-rules-preview>span{display:block;font-size:9px;letter-spacing:.12em;color:#858b94}.page-rules-head h2{font-size:20px;margin:5px 0 7px;font-weight:600}.page-rules-head p{font-size:11px;line-height:1.5;color:#6d737c;margin:0}.page-rules-head>button{border:0;background:none;width:32px;height:32px;display:grid;place-items:center;cursor:pointer}.page-rules-body{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);min-height:0;overflow:hidden}.page-rules-editor-column{padding:14px 16px 30px;overflow:auto}.page-rules-preview{background:#f7f8fa;border-left:1px solid #e5e7ea;padding:16px;overflow:auto}.page-rule-master{border:1px solid #dfe2e6;border-radius:8px;padding:11px 12px;margin-bottom:10px;background:#fbfbfc}.page-rule-master label,.page-rule-check,.page-inheritance-control label{display:flex;align-items:flex-start;gap:9px;cursor:pointer}.page-rule-master input,.page-rule-check input,.page-inheritance-control input{margin-top:2px}.page-rule-master span,.page-rule-check span,.page-inheritance-control span{display:flex;flex-direction:column;gap:2px}.page-rule-master strong,.page-rule-check strong,.page-inheritance-control strong{font-size:10px}.page-rule-master small,.page-rule-check small,.page-inheritance-control small{font-size:9px;color:#777d86;line-height:1.4}.page-rule-field{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center;margin:8px 0}.page-rule-field>span{font-size:9px;color:#666c74}.page-rule-field select{height:32px;border:1px solid #dfe1e5;border-radius:5px;background:#fff;padding:0 7px;font-size:9px}.page-rule-check{padding:10px 0 4px}.page-rule-flow{display:flex;align-items:center;justify-content:space-between;background:#1e2125;color:#fff;border-radius:7px;margin-top:10px;padding:10px 12px}.page-rule-flow b{font-size:8px;letter-spacing:.07em}.page-rule-flow i{font-style:normal;color:#7f858d}.page-rule-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:10px 0 14px}.page-rule-kpis>div{background:#fff;border:1px solid #e1e3e6;border-radius:7px;padding:9px}.page-rule-kpis small,.page-rule-kpis strong{display:block}.page-rule-kpis small{font-size:8px;color:#858a91}.page-rule-kpis strong{font-size:20px;margin-top:3px}.page-section-allocation{display:flex;flex-direction:column;gap:6px}.page-section-allocation>div{display:grid;grid-template-columns:26px 1fr;gap:8px;background:#fff;border:1px solid #e2e4e7;border-radius:7px;padding:8px}.page-section-allocation>div>b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#1e2125;color:#fff;font-size:9px}.page-section-allocation>div>span{min-width:0}.page-section-allocation strong,.page-section-allocation small,.page-section-allocation em{display:block}.page-section-allocation strong{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.page-section-allocation small{font-size:8px;color:#777d86;margin-top:3px}.page-section-allocation em{font-style:normal;font-size:7px;letter-spacing:.06em;color:#555b64;margin-top:5px}.page-reserve-note{margin-top:12px;border:1px solid #dadde1;background:#fff;padding:10px;border-radius:7px}.page-reserve-note strong,.page-reserve-note span{display:block}.page-reserve-note strong{font-size:9px}.page-reserve-note span{font-size:8px;color:#737982;line-height:1.45;margin-top:4px}.page-rules-footer{border-top:1px solid #e5e7ea;padding:11px 16px;display:flex;align-items:center;justify-content:flex-end;gap:12px}.page-rules-footer span{font-size:9px;color:#777d86}.page-rules-footer button{height:32px;background:#1d2024;color:#fff;border:0;border-radius:6px;padding:0 18px;cursor:pointer}.page-inheritance-control{border:1px solid #dde1e5;background:#f8fafc;border-radius:7px;padding:9px 10px;margin:10px 12px 0}.main-canvas-label em{margin-left:4px;font-style:normal;font-size:8px;border:1px solid #dfe1e5;border-radius:999px;padding:3px 6px;color:#858a91}.main-canvas-label em.active{background:#1e2329;border-color:#1e2329;color:#fff}@media(max-width:900px){.page-rules-body{grid-template-columns:1fr}.page-rules-preview{border-left:0;border-top:1px solid #e5e7ea}.page-rules-modal{max-height:95vh}.page-rule-field{grid-template-columns:1fr}.page-rule-kpis{grid-template-columns:repeat(3,1fr)}}\n`;
   writeFileSync(cssPath, css);
 }
 
