@@ -10,16 +10,7 @@ const blockEnd = source.indexOf('\n  writeFileSync(appPath, app);', blockStart);
 if (blockStart < 0 || blockEnd < 0) throw new Error('MASTER_TABS_MEDIA_DND_V56: storefront patch block missing');
 
 const fixedStorefrontPatch = [
-  "  // STOREFRONT: preserve current Slot selection/shape API and add cross-section DnD.",
-  "  app = replaceFunction(app, 'Slot', (chunk) => {",
-  "    if (!/function Slot\\(\\{[^)]*sectionId/.test(chunk)) chunk = chunk.replace('function Slot({', 'function Slot({ sectionId,');",
-  "    const anchor = ' onDrop={onDrop}>';",
-  "    if (!chunk.includes(anchor)) throw new Error(MARKER + ': current Slot onDrop anchor missing');",
-  "    const dnd = ' draggable={Boolean(slot.entity)} onDragStart={(event) => { if (!slot.entity) return; event.stopPropagation(); event.dataTransfer.effectAllowed = \\\'move\\\'; event.dataTransfer.setData(\\\'application/x-storefront-slot-v55\\\', JSON.stringify({ sectionId, slotIndex: slot.index, entityId: slot.entity.id, status: slot.status })); event.dataTransfer.setData(\\\'text/plain\\\', slot.entity.id); }} onDragEnter={(event) => { event.preventDefault(); event.currentTarget.classList.add(\\\'slot-drag-over-v55\\\'); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.classList.remove(\\\'slot-drag-over-v55\\\'); }} onDrop={(event) => { event.currentTarget.classList.remove(\\\'slot-drag-over-v55\\\'); onDrop(event); }}>';",
-  "    chunk = chunk.replace(anchor, dnd);",
-  "    return chunk;",
-  "  });",
-  "",
+  "  // STOREFRONT: use the stable LEGO wrapper as drag source; Slot keeps its existing selection API.",
   "  app = replaceFunction(app, 'SectionCanvas', (chunk) => {",
   "    const dropPattern = /  const onDrop = \\(event, slotIndex\\) => \\{[\\s\\S]*?\\};/;",
   "    if (!dropPattern.test(chunk)) throw new Error(MARKER + ': SectionCanvas onDrop anchor missing');",
@@ -45,7 +36,11 @@ const fixedStorefrontPatch = [
   "      '  };'",
   "    ].join('\\n');",
   "    chunk = chunk.replace(dropPattern, nextDrop);",
-  "    if (!chunk.includes('sectionId={section.id}')) chunk = chunk.replaceAll('<Slot slot={slot}', '<Slot sectionId={section.id} slot={slot}');",
+  "",
+  "    const wrapperAnchor = ' key={si} style={{ gridColumn:';",
+  "    if (!chunk.includes(wrapperAnchor)) throw new Error(MARKER + ': v2-slot wrapper anchor missing');",
+  "    const dragProps = ' key={si} draggable={Boolean(slot?.entity)} onDragStart={(event) => { if (!slot?.entity) return; event.stopPropagation(); event.dataTransfer.effectAllowed = \\\'move\\\'; event.dataTransfer.setData(\\\'application/x-storefront-slot-v55\\\', JSON.stringify({ sectionId: section.id, slotIndex: slot.index, entityId: slot.entity.id, status: slot.status })); event.dataTransfer.setData(\\\'text/plain\\\', slot.entity.id); }} style={{ gridColumn:';",
+  "    chunk = chunk.replace(wrapperAnchor, dragProps);",
   "    return chunk;",
   "  });",
   ""
