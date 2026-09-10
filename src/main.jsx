@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
-import AppV4 from './AppV4.jsx';
+import AppV3 from './AppV3.jsx';
 
 class RuntimeBoundary extends React.Component {
   constructor(props) {
@@ -34,7 +34,7 @@ class RuntimeBoundary extends React.Component {
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RuntimeBoundary>
-      <AppV4 />
+      <AppV3 />
     </RuntimeBoundary>
   </React.StrictMode>,
 );
