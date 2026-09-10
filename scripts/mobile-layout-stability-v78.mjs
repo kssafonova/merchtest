@@ -13,13 +13,31 @@ if (!app.includes(MARKER)) {
   writeFileSync(appPath, app);
 }
 
-// Remove obsolete pre-responsive mobile rules. The old grid-column:auto!important
-// was overriding the explicit gridArea written by SectionCanvas and collapsed
-// every mobile slot to one column even when its canonical V73 span was 2 or 4.
-css = css
-  .replace(/\.storefront-frame\.mobile\s+\.slot-grid\s*\{\s*grid-template-columns\s*:\s*1fr\s*!important\s*;?\s*\}/g, '')
-  .replace(/\.storefront-frame\.mobile\s+\.slot-grid\s*>\s*div\s*\{\s*grid-column\s*:\s*auto\s*!important\s*;?\s*\}/g, '')
-  .replace(/\.storefront-frame\.mobile\s+\.lego-slot\s*\{\s*min-height\s*:\s*190px\s*;?\s*\}/g, '');
+function stripLegacyProperty(ruleSource, selectorRx, propertyRx) {
+  return ruleSource.replace(selectorRx, (full, head, body) => {
+    const nextBody = body.replace(propertyRx, '');
+    return head + nextBody + '}';
+  });
+}
+
+// Remove obsolete pre-responsive mobile declarations even when their blocks
+// contain additional declarations or different whitespace. They must never
+// override the explicit V73 gridArea written per slot.
+css = stripLegacyProperty(
+  css,
+  /(\.storefront-frame\.mobile\s+\.slot-grid\s*\{)([^}]*)\}/g,
+  /grid-template-columns\s*:\s*1fr\s*!important\s*;?/g,
+);
+css = stripLegacyProperty(
+  css,
+  /(\.storefront-frame\.mobile\s+\.slot-grid\s*>\s*div\s*\{)([^}]*)\}/g,
+  /grid-column\s*:\s*auto\s*!important\s*;?/g,
+);
+css = stripLegacyProperty(
+  css,
+  /(\.storefront-frame\.mobile\s+\.lego-slot\s*\{)([^}]*)\}/g,
+  /min-height\s*:\s*190px\s*;?/g,
+);
 
 if (!css.includes('/* mobile-layout-stability-v78 */')) {
   css += String.raw`
@@ -53,7 +71,7 @@ if (!css.includes('/* mobile-layout-stability-v78 */')) {
   justify-items:stretch!important;
   box-sizing:border-box!important;
 }
-/* Deliberately DO NOT set grid-column/grid-row here: SectionCanvas owns them via gridArea. */
+/* DO NOT set grid-column/grid-row here: inline gridArea owns canonical placement. */
 .storefront-frame.mobile .builder-section.layout-v2 .slot-grid>.v2-slot-wrap{
   min-width:0!important;
   max-width:none!important;
@@ -85,11 +103,9 @@ if (!css.includes('/* mobile-layout-stability-v78 */')) {
   display:block!important;
   object-fit:cover!important;
 }
-/* Authoring overlays must never participate in grid sizing. */
+/* Narrow authoring controls scroll instead of changing section geometry. */
 .storefront-frame.mobile .section-author-toolbar-v57,
-.storefront-frame.mobile .section-select-toggle-v60{
-  box-sizing:border-box!important;
-}
+.storefront-frame.mobile .section-select-toggle-v60{box-sizing:border-box!important}
 .storefront-frame.mobile .section-author-toolbar-v57{
   max-width:100%!important;
   overflow-x:auto!important;
