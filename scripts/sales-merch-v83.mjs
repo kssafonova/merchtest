@@ -3,19 +3,19 @@ import { readFileSync, writeFileSync } from 'node:fs';
 /**
  * V83 — merchandising credibility pass.
  *
- * The prototype has to read like a real storefront the moment it opens, so this patch fixes the
- * three things that broke that illusion:
+ * The prototype has to read like a real storefront the moment it opens, so this patch fixes the two
+ * things that broke that illusion:
  *   1. Colour variants were painted from a 400x214 sprite atlas (~13px per cell), which upscaled
- *      into grey blur on every card. Variants now reuse the real model photography and carry an
- *      explicit colour identity (swatch + name + position) instead.
- *   2. A section filled itself with every colour of the same model, so a "new in" row showed one
- *      coat three times. One colour per model is now the default; "all colours" stays available.
- *   3. First load opened on an empty three-slot section: zero coverage, zero products, nothing to
+ *      into grey blur on every card. Every colour SKU of a model now uses the model's real
+ *      photography; the SKU itself stays the identifier, as it is in the feed.
+ *   2. First load opened on an empty three-slot section: zero coverage, zero products, nothing to
  *      judge. The page now opens as a merchandised «Новинки» storefront.
+ *
+ * Colour SKUs are deliberately NOT collapsed anywhere: automation keeps the shipped "all colours of
+ * a model" default, and cards carry no colour swatch and no colour name.
  */
 
 const appPath = 'src/AppV3.jsx';
-const cssPath = 'src/appv3.css';
 const MARKER = 'SALES_MERCH_V83';
 
 let app = readFileSync(appPath, 'utf8');
@@ -39,29 +39,7 @@ if (app.includes(MARKER)) {
 
   const helperAnchor = 'function productLookGroup(product) {';
   if (!app.includes(helperAnchor)) throw new Error(MARKER + ': productLookGroup anchor missing');
-  const helpers = String.raw`const COLOR_SWATCH_V83 = {
-  'черный': '#1b1b1d', 'чёрный': '#1b1b1d', 'графитовый': '#4a4d52', 'темно-серый': '#5d6067',
-  'серый': '#8f9299', 'светло-серый': '#c3c6cb', 'темно-сине-серый': '#4c5663',
-  'белый': '#ffffff', 'молочный': '#f3ece1', 'кремовый': '#efe4d2', 'шампань': '#e8d7bb',
-  'бежевый': '#d9c3a5', 'песочный': '#dbc8a8', 'кэмел': '#b98c56', 'шоколадный': '#6b4630',
-  'темно-синий': '#25304d', 'синий': '#2f4a8a', 'голубой': '#9ec2e0', 'светло-голубой': '#c3dcef',
-  'оливковый': '#7b7f4d', 'хаки': '#8d8862', 'темно-зеленый': '#2f4636', 'зелено-молочный': '#d6ddc9',
-  'изумрудный': '#1f6b56', 'бордовый': '#6d2230', 'красный': '#b3242c',
-  'розовый': '#e9a7bb', 'пыльно-розовый': '#d7a9a6', 'пастельно-розовый': '#f0cdd2', 'пудровый': '#e8c9c2',
-  'лавандовый': '#bdb3dd', 'черно-бежевый': '#8b7d6c',
-};
-
-// Colour names in the feed are free text ("Розовый с цветочным принтом"), so fall back to the first
-// token that we do know before giving up on a swatch.
-function colorSwatchV83(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  if (!raw) return null;
-  if (COLOR_SWATCH_V83[raw]) return COLOR_SWATCH_V83[raw];
-  const head = raw.split(/[\s,/]+/)[0];
-  return COLOR_SWATCH_V83[head] || null;
-}
-
-function pluralRuV83(count, one, few, many) {
+  const helpers = String.raw`function pluralRuV83(count, one, few, many) {
   const n = Math.abs(Number(count) || 0) % 100;
   const tail = n % 10;
   if (n > 10 && n < 20) return many;
@@ -71,40 +49,20 @@ function pluralRuV83(count, one, few, many) {
 }
 
 // Every colour SKU of a model shares the model's packshots. Showing the real garment beats an
-// upscaled sprite cell; the colour itself is carried by the swatch and the SKU label.
+// upscaled sprite cell.
 function productPackshotsV83(base) {
   if (Array.isArray(base?.images) && base.images.length) return base.images;
   return base?.image ? [base.image] : [];
 }
 
-function ColorSwatchV83({ color, size = 9 }) {
-  const hex = colorSwatchV83(color);
-  if (!hex) return null;
-  return <i className="color-swatch-v83" style={{ width: size, height: size, background: hex }} aria-hidden="true"/>;
-}
-
 function productLookGroup(product) {`;
   app = app.replace(helperAnchor, helpers);
 
-  // ---------------------------------------------------------------------------------------------
-  // 2. Merchandising default: one colour per model.
-  // ---------------------------------------------------------------------------------------------
-  const rulesFrom = "ttl: 15, colorMode: 'all', maxColors: 2 };";
-  if (!app.includes(rulesFrom)) throw new Error(MARKER + ': DEFAULT_RULES colour defaults missing');
-  app = app.replace(rulesFrom, "ttl: 15, colorMode: 'one', maxColors: 1 };");
+  // Colour SKUs are deliberately NOT collapsed: a section keeps showing every colour of a model, and
+  // the card carries no colour swatch or colour name.
 
   // ---------------------------------------------------------------------------------------------
-  // 3. Product card reads as commerce: colour swatch, colour name, how many colours exist.
-  // ---------------------------------------------------------------------------------------------
-  const captionFrom = '<small className="product-color-meta">{product.color} · {product.colorVariantCount || 1} цветовых SKU</small>';
-  if (!app.includes(captionFrom)) throw new Error(MARKER + ': product colour caption missing');
-  app = app.replace(
-    captionFrom,
-    '<small className="product-color-meta"><ColorSwatchV83 color={product.color}/>{product.color}{(product.colorVariantCount || 1) > 1 ? " · " + product.colorVariantCount + " " + pluralRuV83(product.colorVariantCount, "цвет", "цвета", "цветов") : ""}</small>',
-  );
-
-  // ---------------------------------------------------------------------------------------------
-  // 4. First load opens on a merchandised page instead of an empty grid.
+  // 2. First load opens on a merchandised page instead of an empty grid.
   // ---------------------------------------------------------------------------------------------
   const initialStart = app.indexOf('const makeInitialSections = () => [');
   const initialEnd = app.indexOf('];', initialStart);
@@ -134,15 +92,4 @@ const makeEmptySectionsV83 = () => [
   writeFileSync(appPath, app);
 }
 
-let css = readFileSync(cssPath, 'utf8');
-if (!css.includes('/* sales-merch-v83 */')) {
-  css += String.raw`
-/* sales-merch-v83 */
-.color-swatch-v83{display:inline-block;flex:0 0 auto;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(17,17,17,.18);margin-right:5px;vertical-align:middle}
-.product-color-meta{display:flex!important;align-items:center;gap:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reference-merch-card .product-color-meta{font-size:8px}
-`;
-  writeFileSync(cssPath, css);
-}
-
-console.log('V83 applied: real variant photography, one-colour-per-model default, colour swatches and a merchandised first-load page');
+console.log('V83 applied: real variant photography and a merchandised first-load page');

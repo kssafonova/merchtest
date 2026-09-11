@@ -61,12 +61,14 @@ if (!css.includes('/* storefront-commerce-v84 */')) {
 .lego-slot.filled .merch-product-card{position:relative!important;display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;background:transparent!important}
 .lego-slot.filled .merch-product-card .merch-card-media{position:relative!important;inset:auto!important;flex:1 1 auto!important;min-height:0!important;width:100%!important;height:auto!important;overflow:hidden!important}
 .lego-slot.filled .merch-product-card .merch-card-media>img,.lego-slot.filled .merch-product-card .merch-card-media>.product-ratio-frame,.lego-slot.filled .merch-product-card .merch-card-media>span{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important}
-/* The caption is a fixed 64px band so every card in a row ends on the same baseline and the
+/* The caption is a fixed 52px band so every card in a row ends on the same baseline and the
    authoring overlays have a deterministic area to avoid. */
-.lego-slot.filled .merch-product-card>.store-card-caption{display:grid!important;flex:0 0 auto!important;position:relative!important;grid-auto-rows:min-content;align-content:start;gap:3px!important;height:64px!important;min-height:64px!important;padding:9px 2px 4px!important;background:transparent!important;text-align:left!important;overflow:hidden!important}
+.lego-slot.filled .merch-product-card>.store-card-caption{display:grid!important;flex:0 0 auto!important;position:relative!important;grid-auto-rows:min-content;align-content:start;gap:3px!important;height:52px!important;min-height:52px!important;padding:9px 2px 4px!important;background:transparent!important;text-align:left!important;overflow:hidden!important}
 .lego-slot.filled .merch-product-card>.store-card-caption>span{display:none!important}
 .lego-slot.filled .merch-product-card>.store-card-caption>strong{font-size:10px!important;line-height:1.25!important;letter-spacing:.02em!important;color:#17181d!important;text-transform:none!important;display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.lego-slot.filled .merch-product-card>.store-card-caption>.product-color-meta{font-size:8px!important;color:#8a8e96!important}
+/* Colour name and colour swatch stay off the card: the model's colour SKUs are shown as separate
+   products, identified by SKU. */
+.lego-slot.filled .merch-product-card>.store-card-caption>.product-color-meta{display:none!important}
 .lego-slot.filled .merch-product-card>.store-card-caption>b{display:flex!important;align-items:baseline!important;gap:6px!important;font-size:11px!important;font-weight:600!important;color:#17181d!important}
 .lego-slot.filled .merch-product-card>.store-card-caption>b.price-sale-v84{color:#a4252d!important}
 .lego-slot.filled .merch-product-card>.store-card-caption>b>s{font-size:9px!important;font-weight:400!important;color:#9a9ea6!important;text-decoration:line-through!important}
@@ -76,7 +78,7 @@ if (!css.includes('/* storefront-commerce-v84 */')) {
 /* Looks and media stay editorial: no caption, full-bleed media. */
 .lego-slot.filled .merch-media-card>.store-card-caption{display:none!important}
 /* Stock / L7D chips belong to the image, not to the price line they used to overlap. */
-.lego-slot.filled:has(.merch-product-card) .content-metric-overlay-v47.slot-overlay-v47{bottom:70px!important}
+.lego-slot.filled:has(.merch-product-card) .content-metric-overlay-v47.slot-overlay-v47{bottom:58px!important}
 
 /* Preview mode is the live storefront: no authoring chrome, no docked panels, centred page. */
 .preview-mode .aem-author-side-panel-v40,

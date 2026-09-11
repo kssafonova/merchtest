@@ -102,13 +102,13 @@ if (app.includes(MARKER)) {
     '<div className="aem-browser-resultbar-v37"><span>НАЙДЕНО</span><strong>{visibleLibrary.length} {contentTab === \'product\' ? pluralRuV83(visibleLibrary.length, \'товар\', \'товара\', \'товаров\') : contentTab === \'look\' ? pluralRuV83(visibleLibrary.length, \'образ\', \'образа\', \'образов\') : pluralRuV83(visibleLibrary.length, \'файл\', \'файла\', \'файлов\')}</strong></div>',
   );
 
-  // Colour SKUs of one model share the model photography, so the library card has to name the colour
-  // (and the price a merchandiser is picking on) or LIM001 and LIM001-C2 are indistinguishable.
+  // The library card shows the price a merchandiser is picking on. Colour name and swatch are
+  // deliberately absent; the colour SKU itself identifies the variant.
   const cardCopyFrom = '<div className="content-card-copy-v47">\n            <span>{identity}</span>\n            <strong>{entity.name || entity.nameRu || entity.title || identity}</strong>\n          </div>';
   if (!app.includes(cardCopyFrom)) throw new Error(MARKER + ': library card copy missing');
   app = app.replace(
     cardCopyFrom,
-    '<div className="content-card-copy-v47">\n            <span>{identity}</span>\n            <strong>{entity.name || entity.nameRu || entity.title || identity}</strong>\n            {isProduct && <small className="content-card-commerce-v85"><ColorSwatchV83 color={entity.color} size={8}/><span>{entity.color}</span><b>{money(finalPriceV84(entity))}</b></small>}\n          </div>',
+    '<div className="content-card-copy-v47">\n            <span>{identity}</span>\n            <strong>{entity.name || entity.nameRu || entity.title || identity}</strong>\n            {isProduct && <small className="content-card-commerce-v85"><b>{money(finalPriceV84(entity))}</b></small>}\n          </div>',
   );
 
   // "Покрытие" meant two different things at once: share of the catalog exposed by the page, and how
@@ -172,9 +172,8 @@ if (!css.includes('/* responsive-shell-v85 */')) {
 .lego-app.preview-mode .builder-section{margin:0 0 10px!important}
 
 /* Library card commerce line. */
-.content-card-commerce-v85{display:flex!important;align-items:center!important;gap:0!important;margin-top:3px!important;font-size:9px!important;color:#8a8e96!important;min-width:0!important}
-.content-card-commerce-v85>span{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
-.content-card-commerce-v85>b{margin-left:auto!important;padding-left:8px!important;color:#17181d!important;font-weight:600!important;white-space:nowrap!important}
+.content-card-commerce-v85{display:block!important;margin-top:3px!important;font-size:9px!important;min-width:0!important}
+.content-card-commerce-v85>b{color:#17181d!important;font-weight:600!important;white-space:nowrap!important}
 
 /* The multi-select tip is a tip, not a permanent banner: one line, and only while authoring. */
 .section-multiselect-hint-v62{padding:7px 12px!important;align-items:center!important;gap:10px!important}
@@ -260,8 +259,8 @@ if (!css.includes('/* responsive-shell-v85 */')) {
   .lego-app .right-side-shell-v45 .simple-library-scroll,
   .lego-app .right-side-shell-v45 .content-library-scroll{padding:12px 12px 24px!important}
   .lego-app .right-side-shell-v45 .right-edge-rail-v44 button{flex:1 1 0!important;display:grid!important;place-items:center!important;gap:2px!important;min-height:48px!important;width:auto!important;border:0!important;font-size:9px!important}
-  .lego-slot.filled .merch-product-card>.store-card-caption{height:58px!important;min-height:58px!important}
-  .lego-slot.filled:has(.merch-product-card) .content-metric-overlay-v47.slot-overlay-v47{bottom:64px!important}
+  .lego-slot.filled .merch-product-card>.store-card-caption{height:48px!important;min-height:48px!important}
+  .lego-slot.filled:has(.merch-product-card) .content-metric-overlay-v47.slot-overlay-v47{bottom:54px!important}
 }
 
 @media (max-width:1024px) and (min-width:641px){
