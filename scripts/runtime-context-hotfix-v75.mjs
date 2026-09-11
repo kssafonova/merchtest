@@ -37,3 +37,4 @@ await import('./sales-merch-v83.mjs');
 await import('./storefront-commerce-v84.mjs');
 await import('./responsive-shell-v85.mjs');
 await import('./logic-audit-v86.mjs');
+await import('./market-stock-v87.mjs');
