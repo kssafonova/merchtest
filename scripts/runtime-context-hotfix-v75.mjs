@@ -32,3 +32,4 @@ await import('./mobile-layout-stability-v78.mjs');
 await import('./ops-migration-lab-v79.mjs');
 await import('./ux-audit-fixes-v80.mjs');
 await import('./runtime-looks-v81.mjs');
+await import('./group-automation-unified-v82.mjs');
