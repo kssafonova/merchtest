@@ -39,3 +39,4 @@ await import('./responsive-shell-v85.mjs');
 await import('./logic-audit-v86.mjs');
 await import('./market-stock-v87.mjs');
 await import('./rules-ux-v88.mjs');
+await import('./canvas-ux-v89.mjs');
