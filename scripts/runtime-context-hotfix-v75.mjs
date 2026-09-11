@@ -36,3 +36,4 @@ await import('./group-automation-unified-v82.mjs');
 await import('./sales-merch-v83.mjs');
 await import('./storefront-commerce-v84.mjs');
 await import('./responsive-shell-v85.mjs');
+await import('./logic-audit-v86.mjs');
