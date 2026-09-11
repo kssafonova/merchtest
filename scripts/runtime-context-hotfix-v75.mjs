@@ -33,3 +33,6 @@ await import('./ops-migration-lab-v79.mjs');
 await import('./ux-audit-fixes-v80.mjs');
 await import('./runtime-looks-v81.mjs');
 await import('./group-automation-unified-v82.mjs');
+await import('./sales-merch-v83.mjs');
+await import('./storefront-commerce-v84.mjs');
+await import('./responsive-shell-v85.mjs');
