@@ -17,12 +17,11 @@ if(!app.includes(MARKER)){
   if(!app.includes(anchor)) throw new Error(MARKER+': V81 marker missing');
   app=app.replace(anchor,anchor+'\nconst '+MARKER+' = true;');
 
-  // There must be only one automation authoring model. The historical group drawer
-  // becomes a thin adapter to the exact same UnifiedAutomationDrawerV69 used by a
-  // single section. Group-specific behavior lives in scope/distribution, not in a
-  // second UI implementation.
+  // One automation editor for both scopes. The group wrapper only supplies
+  // scope/membership; every visual block, scenario and control is the same V77
+  // UnifiedAutomationDrawer used by a single section.
   const groupPart=functionChunk(app,'GroupSectionRulesDrawerV60');
-  const unified=String.raw`function GroupSectionRulesDrawerV60({ sections=[], allSections=[], region, onApply, onClose }) {
+  const unified=String.raw`function GroupSectionRulesDrawerV60({ sections=[], allSections=[], region, pageId='', currentPage=null, onApply, onClose }) {
   const sourceSections=(sections||[]).filter((section)=>section&&!section.generatedByAutomationGroupV64);
   const targetSection=sourceSections.find((section)=>section?.automationGroup?.groupId) || sourceSections[0] || null;
   if(!targetSection) return null;
@@ -32,6 +31,8 @@ if(!app.includes(MARKER)){
     allSections={allSections?.length?allSections:sourceSections}
     selectedIds={selectedIds}
     region={region}
+    pageId={pageId}
+    currentPage={currentPage}
     onApplySingle={(rule,sectionId)=>onApply?.(rule,[sectionId],{mode:'incremental',groupId:null})}
     onApplyGroup={(rule,memberIds,options)=>onApply?.(rule,memberIds,options)}
     onClose={onClose}
@@ -39,7 +40,14 @@ if(!app.includes(MARKER)){
 }`;
   app=app.slice(0,groupPart.start)+unified+app.slice(groupPart.end);
 
+  // Pass the same page context that the single-section entry receives. This
+  // keeps the default Department/section filter and scenario context identical.
+  app=app.replaceAll(
+    'allSections={sections} region={region} onApply={applyGroupRulesV64}',
+    'allSections={sections} region={region} pageId={pageId} currentPage={currentPage} onApply={applyGroupRulesV64}'
+  );
+
   writeFileSync(appPath,app);
 }
 
-console.log('V82 applied: group automation uses the same scenario/rules editor as a single section');
+console.log('V82 applied: group automation uses the exact same V77 editor, page context and scenarios as a single section');
