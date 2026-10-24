@@ -48,10 +48,12 @@ if(!css.includes('/* document-scroll-content-flow-v93 */')){
     min-height:calc(100vh - 74px)!important;
     max-height:none!important;
     align-self:stretch!important;
-    /* An overflow-x:auto / overflow-y:visible mix computes to auto/auto,
-       making the canvas a non-scrolling wheel trap. Let the document scroll. */
-    overflow:visible!important;
-    overscroll-behavior:auto!important;
+    /* Horizontal storefront panning stays available, while vertical wheel
+       gestures are allowed to chain to the document instead of being trapped. */
+    overflow-x:auto!important;
+    overflow-y:auto!important;
+    overscroll-behavior-x:contain!important;
+    overscroll-behavior-y:auto!important;
     scroll-behavior:auto!important;
   }
 
