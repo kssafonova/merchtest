@@ -25,6 +25,7 @@ const pipeline = [
   'logic-audit-v86.mjs','market-stock-v87.mjs','rules-ux-v88.mjs','canvas-ux-v89.mjs','ui-layout-stability-v90.mjs',
   'slot-badges-metrics-v91.mjs','panel-flow-slot-metrics-v92.mjs','document-scroll-content-flow-v93.mjs',
   'independent-panel-scroll-v94.mjs','editor-ux-polish-v95.mjs',
+  'autofill-user-flow-v96.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
