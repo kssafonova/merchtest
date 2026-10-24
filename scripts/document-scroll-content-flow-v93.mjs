@@ -48,8 +48,11 @@ if(!css.includes('/* document-scroll-content-flow-v93 */')){
     min-height:calc(100vh - 74px)!important;
     max-height:none!important;
     align-self:stretch!important;
-    overflow-x:auto!important;
-    overflow-y:visible!important;
+    /* An overflow-x:auto / overflow-y:visible mix computes to auto/auto,
+       making the canvas a non-scrolling wheel trap. Let the document scroll. */
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+    scroll-behavior:auto!important;
   }
 
   /* Left panel is part of page flow; no clipped internal viewport. */
@@ -144,6 +147,17 @@ if(!css.includes('/* document-scroll-content-flow-v93 */')){
     min-height:0!important;
     max-height:none!important;
     overflow:visible!important;
+  }
+}
+/* The mobile editor deliberately uses a bounded scrolling canvas, but avoid
+   scripted smooth-scroll animations fighting touch-driven scrolling. */
+@media (max-width:1023.98px){
+  .lego-app .canvas-shell,
+  .lego-app .aem-side-scroll-v40,
+  .lego-app .aem-browser-shell-v37,
+  .lego-app .content-library-scroll{
+    scroll-behavior:auto!important;
+    -webkit-overflow-scrolling:touch!important;
   }
 }
 `;
