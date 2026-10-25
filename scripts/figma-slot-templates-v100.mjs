@@ -17,4 +17,16 @@ if(!app.includes(MARKER)){
   patch(pageId,restore+pageId,'type registry hydration');
   writeFileSync(path,app);
 }
+const cssPath='src/appv3.css';
+let css=readFileSync(cssPath,'utf8');
+if(!css.includes('/* figma-slot-templates-v100 */')){css+=String.raw`
+/* figma-slot-templates-v100 */
+.figma-slot-explanation-v100{padding:13px 14px;border:1px solid #c8d8eb;border-radius:9px;background:#f2f7fe;display:grid;gap:6px}
+.figma-slot-explanation-v100 strong{font-size:12px;font-weight:750;color:#263f67}
+.figma-import-dialog-v97 .figma-slot-explanation-v100 p{font-size:11px;line-height:1.55;color:#4e627e}
+.figma-import-dialog-v97 .figma-slot-explanation-v100 p.figma-slot-error-v100{color:#963a29}
+.figma-review-list-v97>label:has(.figma-slot-error-v100){border-color:#e8b6aa}
+.figma-review-list-v97>label span:nth-last-child(2){white-space:normal}
+.figma-review-list-v97>label small{white-space:normal;line-height:1.45;overflow-wrap:anywhere}
+`;writeFileSync(cssPath,css);}
 console.log('V100 applied: imported Figma layouts have reusable native content slots');
