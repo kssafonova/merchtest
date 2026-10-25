@@ -44,6 +44,10 @@ try{
   for(const label of ['Какие товары показывать?','Где разместить товары?','Что получится','Дополнительные настройки']){
     if(!html.includes(label))throw Error('Automation smoke: simplified CJM missing '+label);
   }
+  for(const expected of ['automation-side-layer-v114','automation-side-sheet-v114','aria-modal="true"','role="dialog"','Автоматическое заполнение секции']){
+    if(!html.includes(expected))throw Error('Automation smoke: inaccessible side sheet; missing '+expected);
+  }
+  if(!html.includes('auto-cjm-preview-v113'))throw Error('Automation smoke: preview missing inside drawer');
   console.log('V109 runtime smoke passed: automation dialog rendered '+html.length+' chars');
 }catch(error){
   console.error('V109 AUTOMATION OPEN FAILED');
