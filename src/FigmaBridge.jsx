@@ -91,18 +91,30 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
   const [drag,setDrag]=useState(false);
   const [link,setLink]=useState('');
   const [jsonText,setJsonText]=useState('');
+  const [mobileJsonText,setMobileJsonText]=useState('');
+  const [mobileDoc,setMobileDoc]=useState(null);
+  const [sectionNames,setSectionNames]=useState({});
   const [interpretMiniature,setInterpretMiniature]=useState(false);
   const [connected,setConnected]=useState(()=>typeof sessionStorage!=='undefined' && Boolean(sessionStorage.getItem(FIGMA_SESSION_KEY)));
   const [linkBusy,setLinkBusy]=useState(false);
   const bridge=figmaBridgeUrl();
   const ref=useRef(null);
+  function loadMobileJson(){
+    if(!mobileJsonText.trim()){setMobileDoc(null);setError('');return;}
+    try{
+      const parsed=convertFigmaFile(JSON.parse(mobileJsonText));
+      if(doc && parsed.blocks.length!==doc.blocks.length)throw Error('Число мобильных фреймов должно совпадать с Desktop ('+doc.blocks.length+').');
+      setMobileDoc(parsed);setError('');
+    }catch(e){setError('Mobile JSON: '+(e.message||'ошибка формата'));}
+  }
+  const mobileFor=(block,i)=>mobileDoc?.blocks?.length===doc?.blocks?.length?mobileDoc.blocks[i]:null;
   function loadPastedJson(){
     setError('');setDoc(null);setChosen([]);
     try{
       if(jsonText.length>10*1024*1024)throw Error('Слишком большой JSON. Используйте импорт из файла.');
       const source=JSON.parse(jsonText);
       const next=convertFigmaFile(source);
-      setDoc(next);setChosen(next.blocks.map((_,i)=>i));
+      setDoc(next);setChosen(next.blocks.map((_,i)=>i));setMobileDoc(null);setMobileJsonText('');setSectionNames({});
     }catch(e){setError('Ошибка JSON: '+(e?.message||'Не удалось распознать макет.'));}
   }
   async function load(file){
@@ -149,9 +161,9 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
       window.location.assign(bridge+'/auth/start');
     }catch(e){setError(e.message||'Не удалось обработать ссылку.');}
   }
-  useEffect(()=>{if(!open){setDoc(null);setChosen([]);setError('');setLink('');setJsonText('');setMode('append');setInterpretMiniature(false);}},[open]);
+  useEffect(()=>{if(!open){setDoc(null);setChosen([]);setError('');setLink('');setJsonText('');setMobileJsonText('');setMobileDoc(null);setSectionNames({});setMode('append');setInterpretMiniature(false);}},[open]);
   if(!open)return null;
-  const previews=doc?.blocks.map(block=>{try{return {result:inspectFigmaSlots(block,{interpretMiniature}),error:null};}catch(e){return {result:null,error:e.message||'Не удалось определить слоты.'};}})||[];
+  const previews=doc?.blocks.map((block,i)=>{try{return {result:inspectFigmaSlots(block,{interpretMiniature,mobileBlock:mobileFor(block,i),name:sectionNames[i]||block.name}),error:null};}catch(e){return {result:null,error:e.message||'Не удалось определить слоты.'};}})||[];
   const hasMiniature=Boolean(doc?.blocks.some(isCompactVectorDiagram));
   const selected=doc?.blocks.filter((_,i)=>chosen.includes(i))||[];
   const selectedInvalid=chosen.filter(i=>previews[i]?.error);
@@ -205,6 +217,11 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           <small>Поддерживаются Figma API JSON и экспорт плагина. Максимум 30 МБ.</small>
         </div>
         </details>
+        {doc&&<section className="figma-mobile-input-v106" aria-label="Мобильный макет">
+          <div><strong>Mobile — отдельный JSON (необязательно)</strong><small>Те же слоты, но другая раскладка. Без мобильного JSON редактор построит 4-колоночную сетку автоматически.</small></div>
+          <textarea rows={5} value={mobileJsonText} placeholder='{"type":"FRAME","name":"Mobile","width":375,"height":720,"children":[...]}' spellCheck={false} onChange={e=>{setMobileJsonText(e.target.value);setMobileDoc(null);setError('');}}/>
+          <div className="figma-mobile-actions-v106"><button type="button" disabled={!mobileJsonText.trim()} onClick={loadMobileJson}>Применить Mobile JSON</button>{mobileDoc&&<span>Мобильный макет подключён</span>}</div>
+        </section>}
         {error&&<div className="figma-import-warning-v97" role="status"><AlertTriangle size={16}/><span>{error}</span></div>}
         {busy&&<div className="figma-import-busy-v97">Чтение слоёв Figma…</div>}
         {doc&&<div className="figma-import-review-v97">
@@ -214,6 +231,26 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
             <span className="figma-frame-icon-v97"><Layers3 size={20}/></span><span><strong>{block.name}</strong><small>{previews[i]?.error?'Нужно исправить Figma: '+previews[i].error:previews[i]?.result.count+' пустых слотов · адаптивная сетка 12/4'} · {Math.round(block.box?.w||0)} × {Math.round(block.box?.h||0)} px</small></span>
             {chosen.includes(i)&&<Check size={16}/>}
           </label>)}</div>
+          <div className="figma-section-properties-v106">
+            {doc.blocks.map((block,i)=><div className="figma-section-prop-v106" key={'figma-section-prop-'+i}>
+              <label>Компонент «Секция» · название
+                <input value={sectionNames[i]??block.name??''} maxLength={100} onChange={e=>setSectionNames(prev=>({...prev,[i]:e.target.value}))} placeholder="Например, Editorial · 5 слотов"/>
+              </label>
+              {previews[i]?.result&&<div className="figma-section-device-previews-v106">
+                {['desktop','mobile'].map(device=>{
+                  const slots=previews[i].result[device];
+                  const cols=device==='desktop'?12:4;
+                  const rows=Math.max(1,...slots.map(x=>x.rowStart+x.rows-1));
+                  return <div className={'figma-section-device-v106 '+device} key={device}>
+                    <strong>{device==='desktop'?'Desktop · 12 колонок':'Mobile · 4 колонки'} {device==='mobile'&&<small>{previews[i].result.mobileMode==='imported'?'из Figma':'автоматически'}</small>}</strong>
+                    <div className="figma-section-mini-grid-v106" style={{gridTemplateColumns:'repeat('+cols+',minmax(0,1fr))',gridTemplateRows:'repeat('+rows+',minmax(18px,1fr))'}}>
+                      {slots.map((slot,k)=><span key={k} style={{gridColumn:slot.start+' / span '+slot.span,gridRow:slot.rowStart+' / span '+slot.rows}} title={slot.name}>{k+1}</span>)}
+                    </div>
+                  </div>;
+                })}
+              </div>}
+            </div>)}
+          </div>
           {hasMiniature&&<label className="figma-miniature-option-v102">
             <input type="checkbox" checked={interpretMiniature} onChange={e=>setInterpretMiniature(e.target.checked)}/>
             <span><strong>Считать миниатюру схемой слотов</strong><small>Для небольших схем из FRAME или VECTOR: каждый конечный прямоугольник станет пустым слотом. Включайте только если это схема раскладки, а не иконка.</small></span>
@@ -222,7 +259,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           <div className="figma-import-mode-v97"><strong>Куда добавить?</strong><label><input type="radio" name="figma-import-mode" checked={mode==='append'} onChange={()=>setMode('append')}/><span><b>В конец текущей страницы</b><small>Существующие секции останутся без изменений.</small></span></label><label><input type="radio" name="figma-import-mode" checked={mode==='replace'} onChange={()=>setMode('replace')}/><span><b>Заменить секции страницы</b><small>Можно отменить через Undo до перезагрузки.</small></span></label></div>
         </div>}
       </div>
-      <footer><span>{doc?validCount+' макетов · '+selected.reduce((sum,block)=>sum+(previews[doc.blocks.indexOf(block)]?.result?.count||0),0)+' пустых слотов':'Контент импортирован не будет — только структура слотов'}</span><button onClick={onClose}>Отмена</button><button className="primary" disabled={!selected.length||selectedInvalid.length>0||busy||linkBusy} onClick={()=>{if(mode==='replace'&&!window.confirm('Заменить все секции текущей страницы макетами из Figma?'))return;try{onImport(selected.map((x,i)=>makeFigmaSlotSection(x,i,{interpretMiniature})),mode);}catch(e){setError(e.message||'Не удалось создать секции из Figma.');}}}>Создать {selected.length||''} {selected.length===1?'секцию':'секции'}</button></footer>
+      <footer><span>{doc?validCount+' макетов · '+selected.reduce((sum,block)=>sum+(previews[doc.blocks.indexOf(block)]?.result?.count||0),0)+' пустых слотов':'Контент импортирован не будет — только структура слотов'}</span><button onClick={onClose}>Отмена</button><button className="primary" disabled={!selected.length||selectedInvalid.length>0||busy||linkBusy} onClick={()=>{if(mode==='replace'&&!window.confirm('Заменить все секции текущей страницы макетами из Figma?'))return;try{onImport(selected.map((x,i)=>makeFigmaSlotSection(x,i,{interpretMiniature,mobileBlock:mobileFor(x,doc.blocks.indexOf(x)),name:sectionNames[doc.blocks.indexOf(x)]?.trim()||x.name||'Секция из Figma'})),mode);}catch(e){setError(e.message||'Не удалось создать секции из Figma.');}}}>Создать {selected.length||''} {selected.length===1?'секцию':'секции'}</button></footer>
     </div>
   </div>;
 }
