@@ -34,7 +34,7 @@ if(!app.includes(MARK)){
   const wrapStyle=c.indexOf('style={{',wrapAt);
   if(wrapAt<0||wrapStyle<0)throw Error(MARK+': slot wrapper missing');
   c=c.slice(0,wrapStyle)+c.slice(wrapStyle).replace('style={{','style={{ ...figmaOverlaySlotVarsV111(shape,container,editable && selected && figmaEditableLayerV111===slotIndex),');
-  const sectionContent='<div className="section-containers">';
+  const sectionContent='<div className="section-containers"';
   if(!c.includes(sectionContent))throw Error(MARK+': section content missing');
   const layerNav="{editable&&selected&&containers.some(c=>c.figmaOverlayV111)&&<div className=\"figma-layer-nav-v111\" role=\"toolbar\" aria-label=\"Слои Figma\"><span>Слои Figma</span><button type=\"button\" className={figmaEditableLayerV111==null?'active':''} onClick={e=>{e.stopPropagation();setFigmaEditableLayerV111(null)}}>Как в макете</button>{(containers.find(c=>c.figmaOverlayV111)?.slots||[]).map((item,index)=><button key={item.figmaNodeId||index} type=\"button\" className={figmaEditableLayerV111===item.slotIndex?'active':''} title={'Вывести слот '+(item.slotIndex+1)+' вперёд для редактирования'} onClick={e=>{e.stopPropagation();setFigmaEditableLayerV111(item.slotIndex)}}>{'Слот '+(item.slotIndex+1)}</button>)}<small>Выбор временно выводит слот вперёд</small></div>}";
   c=c.replace(sectionContent,layerNav+sectionContent);
