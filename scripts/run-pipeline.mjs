@@ -28,11 +28,12 @@ const pipeline = [
   'autofill-user-flow-v96.mjs',
   'figma-editor-bridge-v97.mjs','figma-visual-v98.mjs','figma-hosted-import-v99.mjs',
   'figma-slot-templates-v100.mjs','figma-json-primary-v103.mjs',
-  'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs',
+  'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs','automation-dialog-tdz-fix-v108.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
 }
 if (process.env.npm_lifecycle_event === 'prebuild') {
   await import(new URL('./runtime-smoke-v75.mjs', import.meta.url));
+  await import(new URL('./automation-dialog-runtime-smoke-v109.mjs', import.meta.url));
 }
