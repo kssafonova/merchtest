@@ -41,6 +41,9 @@ try{
   }));
   if(!html.includes('Автонаполнение')&&!html.includes('Авто-наполнение'))
     throw Error('Automation smoke: rules editor did not render');
+  for(const label of ['Какие товары показывать?','Где разместить товары?','Что получится','Дополнительные настройки']){
+    if(!html.includes(label))throw Error('Automation smoke: simplified CJM missing '+label);
+  }
   console.log('V109 runtime smoke passed: automation dialog rendered '+html.length+' chars');
 }catch(error){
   console.error('V109 AUTOMATION OPEN FAILED');
