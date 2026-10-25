@@ -94,15 +94,14 @@ function visualCandidates(block,options={}){
   return {source:'frame',nodes:[{node:block,box:root,depth:0,source:'frame'}]};
 }
 function cleanCandidates(items,root){
-  const sorted=[...items].sort((a,b)=>a.box.y-b.box.y||a.box.x-b.box.x||b.depth-a.depth);
+  const sorted=items.map((item,paintOrder)=>({...item,paintOrder})).sort((a,b)=>a.box.y-b.box.y||a.box.x-b.box.x||b.depth-a.depth);
   const result=[];
   for(const candidate of sorted){
     const a=candidate.box;
-    // Remove duplicate/parent placeholders if they cover nearly the same footprint.
-    if(result.some(other=>{
-      const b=other.box;
-      return overlaps(a,b)>=.82*Math.min(a.w*a.h,b.w*b.h);
-    }))continue;
+    // Distinct Figma nodes may intentionally overlap or completely cover
+    // each other. Keep both, including identical bounds; only dedupe an
+    // accidentally repeated reference to the SAME node.
+    if(result.some(other=>other.node===candidate.node))continue;
     result.push(candidate);
     if(result.length>=LIMIT)break;
   }
@@ -147,16 +146,23 @@ function buildGrid(slots,root,cols=12){
       ratio:b.w>=b.h?'landscape':'portrait',
       figmaLayerName:item.source==='miniature'?'Слот '+(i+1):(safeName(item.node.name)||'Слот '+(i+1)),
       figmaNodeId:String(item.node.id||''),
+      figmaLayerOrderV111:item.paintOrder??i,
       sourceBox:{x:rounded(b.x-root.x),y:rounded(b.y-root.y),w:rounded(b.w),h:rounded(b.h)},
     };
   });
+  // CSS Grid cannot represent arbitrary Figma overlaps without changing
+  // layer boundaries. Flag the composition for absolute positioning instead
+  // of rejecting the import or moving user-drawn content placeholders.
   for(let i=0;i<generated.length;i++){
-    const a=generated[i];
+    const a=generated[i],boxA=slots[i].box;
     for(let j=0;j<i;j++){
-      const b=generated[j];
+      const b=generated[j],boxB=slots[j].box;
       const rowCollision=a.rowStart<b.rowStart+b.rows&&b.rowStart<a.rowStart+a.rows;
       const colCollision=a.start<b.start+b.span&&b.start<a.start+a.span;
-      if(rowCollision&&colCollision)throw Error('Слоты пересекаются на сетке '+cols+' колонок. Раздвиньте их или измените границы фреймов в Figma.');
+      if(overlaps(boxA,boxB)>0||(rowCollision&&colCollision)){
+        a.figmaOverlapV111=true;
+        b.figmaOverlapV111=true;
+      }
     }
   }
   return generated;
@@ -169,10 +175,10 @@ function mobileLayout(slots){
     const wide=slot.span>=8||slot.rows>1;
     if(wide){
       if(column!==1){row++;column=1;}
-      result.push({...slot,start:1,span:4,rowStart:row,rows:Math.min(slot.rows,2)});
+      result.push({...slot,start:1,span:4,rowStart:row,rows:Math.min(slot.rows,2),figmaOverlapV111:false});
       row+=Math.min(slot.rows,2);column=1;
     }else{
-      result.push({...slot,start:column,span:2,rowStart:row,rows:1});
+      result.push({...slot,start:column,span:2,rowStart:row,rows:1,figmaOverlapV111:false});
       column=column===1?3:1;
       if(column===1)row++;
     }
@@ -202,8 +208,10 @@ function mobileSlotsFromFigma(desktop,block,options){
   return {slots:mapped,mapping:named?'name':'order'};
 }
 
-function container(cols,slots){
+function container(cols,slots,root){
   return {
+    figmaOverlayV111:slots.some(s=>s.figmaOverlapV111===true),
+    figmaFrameV111:{width:root.w,height:root.h},
     cols,rows:Math.max(1,...slots.map(s=>s.rowStart+s.rows-1)),
     columnGap:4,rowGap:4,
     container:{mode:'full',width:'100%',maxWidth:null,align:'center',marginLeft:0,marginRight:0,paddingLeft:0,paddingRight:0},
@@ -224,9 +232,9 @@ export function deriveFigmaSlotTemplate(block,options={}){
     label:title,
     system:false,layoutV2:true,figmaImportedV100:true,
     category:'Секция',componentKind:'Секция',description:'Компонент «Секция» из Figma · '+slots.length+' слотов · Desktop 12 / Mobile 4',
-    tags:['Figma','12→4','слоты'],containers:[container(12,slots)],
-    mobileContainers:[container(4,mobileSlots)],
-    figmaMetaV100:{frameId:String(block.id||''),frameName:safeName(block.name),sourceSize:root,method:detected.source,mobileMode:customMobile?'imported':'auto',mobileMapping:customMobile?.mapping||'auto'},
+    tags:['Figma','12→4','слоты'],containers:[container(12,slots,root)],
+    mobileContainers:[container(4,mobileSlots,customMobile?rect(options.mobileBlock):root)],
+    figmaMetaV100:{frameId:String(block.id||''),frameName:safeName(block.name),sourceSize:root,overlapDesktop:slots.some(s=>s.figmaOverlapV111),overlapMobile:mobileSlots.some(s=>s.figmaOverlapV111),method:detected.source,mobileMode:customMobile?'imported':'auto',mobileMapping:customMobile?.mapping||'auto'},
   };
 }
 export function makeFigmaSlotSection(block,index=0,options={}){
@@ -247,8 +255,12 @@ export function inspectFigmaSlots(block,options={}){
     title:type.label,
     mobileMode:type.figmaMetaV100.mobileMode,
     mobileMapping:type.figmaMetaV100.mobileMapping,
+    desktopOverlap:type.figmaMetaV100.overlapDesktop,
+    mobileOverlap:type.figmaMetaV100.overlapMobile,
+    desktopFrame:type.containers[0].figmaFrameV111,
+    mobileFrame:type.mobileContainers[0].figmaFrameV111,
     method:type.figmaMetaV100.method,
-    desktop:type.containers[0].slots.map(x=>({name:x.figmaLayerName,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
-    mobile:type.mobileContainers[0].slots.map(x=>({name:x.figmaLayerName,slotIndex:x.slotIndex,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
+    desktop:type.containers[0].slots.map(x=>({name:x.figmaLayerName,slotIndex:x.slotIndex,sourceBox:x.sourceBox,layerOrder:x.figmaLayerOrderV111,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
+    mobile:type.mobileContainers[0].slots.map(x=>({name:x.figmaLayerName,slotIndex:x.slotIndex,sourceBox:x.sourceBox,layerOrder:x.figmaLayerOrderV111,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
   };
 }
