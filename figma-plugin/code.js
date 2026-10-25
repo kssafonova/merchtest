@@ -24,7 +24,7 @@ async function asNode(n,depth=0){
       if(!image)continue;
       const bytes=await image.getBytesAsync();
       if(bytes.length<=6*1024*1024){
-        const mime='image/png';
+        const mime=bytes[0]===0xff&&bytes[1]===0xd8?'image/jpeg':bytes[0]===0x47&&bytes[1]===0x49?'image/gif':bytes[0]===0x52&&bytes[1]===0x49?'image/webp':'image/png';
         seenImages[paint.imageRef]='data:'+mime+';base64,'+figma.base64Encode(bytes);
       }
     }catch(e){ /* unavailable image will render as an empty media placeholder */ }
