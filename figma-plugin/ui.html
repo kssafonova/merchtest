@@ -1,0 +1,34 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#20242a;font-family:Inter,Arial,sans-serif;font-size:13px}
+main{padding:22px}header{display:flex;gap:10px;align-items:center;margin-bottom:18px}
+h1{font-size:18px;letter-spacing:-.02em;margin:0 0 5px}p{color:#667085;line-height:1.55;font-size:12px;margin:0}
+ol{padding-left:18px;margin:18px 0 20px;color:#3d4754;line-height:2}
+button{font:inherit;cursor:pointer;min-height:40px;border:1px solid #cfd6e1;background:#fff;border-radius:8px;padding:0 15px;font-weight:650}
+button.primary{color:#fff;background:#245bc3;border-color:#245bc3}button:disabled{opacity:.5;cursor:wait}
+.actions{display:flex;gap:8px}#status{font-size:11px;margin-top:14px;color:#64748b;min-height:20px}
+.note{padding:11px 13px;background:#f4f7fc;border-radius:8px;color:#53637a;font-size:11px;line-height:1.5}
+</style></head><body><main>
+<header><div><h1>Экспорт в merchtest</h1><p>Перенос структуры и слоёв Figma в редактор.</p></div></header>
+<div class="note">Экспортируются выделенные фреймы, их текст, размеры, цвета и встроенные изображения. Для лучшего результата используйте Auto Layout.</div>
+<ol><li>Выделите Frame или несколько Frame.</li><li>Нажмите «Экспортировать JSON».</li><li>Перетащите файл в merchtest → «Из Figma».</li></ol>
+<div class="actions"><button class="primary" id="export">Экспортировать JSON</button><button id="close">Закрыть</button></div><div id="status" role="status"></div>
+</main><script>
+const btn=document.querySelector('#export');const status=document.querySelector('#status');
+btn.onclick=()=>{btn.disabled=true;status.textContent='Подготовка макета и изображений…';parent.postMessage({pluginMessage:{type:'EXPORT'}},'*');};
+document.querySelector('#close').onclick=()=>parent.postMessage({pluginMessage:{type:'CLOSE'}},'*');
+window.onmessage=(event)=>{
+ const msg=event.data.pluginMessage;if(!msg)return;
+ if(msg.type==='ERROR'){status.textContent=msg.message;btn.disabled=false;return;}
+ if(msg.type==='DATA'){
+   try{
+     const blob=new Blob([JSON.stringify(msg.data)],{type:'application/json'});
+     const href=URL.createObjectURL(blob);const a=document.createElement('a');
+     a.href=href;a.download='merchtest-figma-'+Date.now()+'.json';
+     document.body.append(a);a.click();a.remove();
+     setTimeout(()=>URL.revokeObjectURL(href),3000);
+     status.textContent='Экспорт готов. Перетащите JSON в merchtest.';
+   }catch(e){status.textContent='Не удалось создать JSON: '+e.message;}
+   btn.disabled=false;
+ }
+};
+</script></body></html>
