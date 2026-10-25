@@ -31,7 +31,7 @@ test('Empty slot templates remain unfilled, editable and compatible with automat
   assert.deepEqual(section.pins,{});
   assert.equal(section.rules.mode,'manual');
   assert.equal(section.figmaNode,undefined);
-  assert.equal(section.template.category,'Макеты из Figma');
+  assert.equal(section.template.category,'Секция');
 });
 test('Nested Auto Layout wrappers resolve to cells, not one screenshot layer',()=>{
   const design=node('8:1','Макет',0,0,1200,400,[
