@@ -14,9 +14,10 @@ if(!app.includes(MARK)){
   const previewStyle=p.indexOf('style={{',previewGrid);
   if(previewStyle<0)throw Error(MARK+': type preview style missing');
   p=p.slice(0,previewStyle)+p.slice(previewStyle).replace('style={{','style={{ ...figmaOverlayCanvasVarsV111(container),');
-  const spanStyle='style={{ gridColumn: slot.start';
-  if(!p.includes(spanStyle))throw Error(MARK+': type preview slot placement missing');
-  p=p.replace(spanStyle,'style={{ ...figmaOverlaySlotVarsV111(slot,container), gridColumn: slot.start');
+  const slotMapAt=p.indexOf('container.slots.map(',previewGrid);
+  const previewSlotStyle=p.indexOf('style={{',slotMapAt);
+  if(slotMapAt<0||previewSlotStyle<0)throw Error(MARK+': type preview slot placement missing');
+  p=p.slice(0,previewSlotStyle)+p.slice(previewSlotStyle).replace('style={{','style={{ ...figmaOverlaySlotVarsV111(slot,container),');
   app=app.slice(0,preview.at)+p+app.slice(preview.end);
   let canvas=chunk('SectionCanvas');
   let c=canvas.s;
