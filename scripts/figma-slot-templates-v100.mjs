@@ -16,7 +16,7 @@ if(!app.includes(MARKER)){
   const restore='  useEffect(()=>{Object.values(pageSections||{}).forEach(pages=>Object.values(pages||{}).forEach(sections=>{if(Array.isArray(sections))sections.forEach(section=>registerFigmaTypeV100(section?.template));}));},[pageSections]);\n';
   patch(pageId,restore+pageId,'type registry hydration');
   const baseCategories="const categories = ['Макеты', 'Товары', 'Креативные', 'Эдиториал', 'Главная'];";
-  if(app.includes(baseCategories))app=app.replace(baseCategories,"const categories = ['Макеты', 'Макеты из Figma', 'Товары', 'Креативные', 'Эдиториал', 'Главная'];");
+  if(app.includes(baseCategories))app=app.replace(baseCategories,"const categories = ['Макеты', 'Секция', 'Макеты из Figma', 'Товары', 'Креативные', 'Эдиториал', 'Главная'];");
   writeFileSync(path,app);
 }
 const cssPath='src/appv3.css';
