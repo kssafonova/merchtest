@@ -8,7 +8,9 @@
     "dev": "vite",
     "prebuild": "node scripts/run-pipeline.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "figma:pull": "node scripts/figma-pull.mjs",
+    "test:figma": "node --test tests/figma-bridge.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
