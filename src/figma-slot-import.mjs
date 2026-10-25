@@ -23,7 +23,7 @@ function usable(box,root){
 }
 function visualCandidates(block){
   const root=rect(block);
-  if(root.w<100||root.h<60)throw Error('Фрейм слишком маленький. Выберите макет секции в Figma.');
+  if(root.w<100||root.h<60)throw Error('Фрейм '+Math.round(root.w)+'×'+Math.round(root.h)+' px похож на иконку или элемент интерфейса, а не на секцию со слотами. Создайте Frame секции и назовите области Slot 1, Slot 2 и т. д.');
   const explicit=[],visual=[],geometry=[];
   function walk(node,depth=0){
     if(!node||depth>9||node.kind==='text')return;
@@ -40,7 +40,9 @@ function visualCandidates(block){
     if(!ok||depth===0)return;
     const item={node,box:b,depth,source:'geometry'};
     if(node.image)visual.push({...item,source:'image'});
-    if(!children.length&&node.kind!=='ellipse')geometry.push(item);
+    // VECTOR fragments are paths of an icon/illustration, not merchandise slots.
+    // Only an explicitly named Slot can become a slot from vector geometry.
+    if(!children.length&&node.kind!=='ellipse'&&node.sourceType!=='VECTOR'&&node.sourceType!=='LINE'&&node.sourceType!=='BOOLEAN_OPERATION')geometry.push(item);
     // Empty Auto Layout cell is also a valid candidate, even if it has no fill.
     if(node.kind==='container'&&(!children.length||children.every(x=>x.kind==='text')))geometry.push(item);
   }
