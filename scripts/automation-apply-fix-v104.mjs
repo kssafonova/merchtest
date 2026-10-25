@@ -12,7 +12,7 @@ if(!code.includes(marker)){
   if(start<0||end<0)throw Error(marker+': automation drawer not found');
   let drawer=code.slice(start,end);
   const saveOld="    if(isGroup) onApplyGroup?.(normalized,memberIdsV77,{mode:showAllV77?'full':'incremental',groupId:existingGroup?.groupId||null});\n    else onApplySingle?.(normalized,memberIdsV77[0]||targetSection.id);";
-  const saveNew="    if(isGroup||showAllV77||existingGroup?.repeatSingleV76) onApplyGroup?.(normalized,memberIdsV77,{mode:showAllV77?'full':'incremental',groupId:existingGroup?.groupId||null});\n    else onApplySingle?.(normalized,memberIdsV77[0]||targetSection.id);";
+  const saveNew="    if(isGroup||showAllV77) onApplyGroup?.(normalized,memberIdsV77,{mode:showAllV77?'full':'incremental',groupId:existingGroup?.groupId||null});\n    else onApplySingle?.(normalized,memberIdsV77[0]||targetSection.id);";
   if(!drawer.includes(saveOld))throw Error(marker+': original save dispatcher changed');
   drawer=drawer.replace(saveOld,saveNew);
   const canOld="const autoFillCanApplyV96=!invalidV77&&previewV88.pool>0&&freeSlotsV86>0;";
