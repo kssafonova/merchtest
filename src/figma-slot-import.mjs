@@ -249,6 +249,6 @@ export function inspectFigmaSlots(block,options={}){
     mobileMapping:type.figmaMetaV100.mobileMapping,
     method:type.figmaMetaV100.method,
     desktop:type.containers[0].slots.map(x=>({name:x.figmaLayerName,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
-    mobile:type.mobileContainers[0].slots.map(x=>({name:x.figmaLayerName,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
+    mobile:type.mobileContainers[0].slots.map(x=>({name:x.figmaLayerName,slotIndex:x.slotIndex,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
   };
 }
