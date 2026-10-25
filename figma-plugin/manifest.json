@@ -1,11 +1,15 @@
 {
   "name": "Merchtest — Export editable frames",
-  "id": "merchtest-figma-export",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
   "editorType": [
     "figma"
   ],
-  "documentAccess": "dynamic-page"
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  }
 }
