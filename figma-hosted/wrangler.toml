@@ -1,0 +1,14 @@
+name = "merchtest-figma-oauth"
+main = "worker.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+EDITOR_URL = "https://kssafonova.github.io/merchtest/"
+ALLOWED_ORIGIN = "https://kssafonova.github.io"
+
+# Set these with wrangler secret put or CI secrets:
+# FIGMA_CLIENT_ID
+# FIGMA_CLIENT_SECRET
+# SESSION_SECRET
+# OAuth redirect URL must be your deployed workers.dev URL + /auth/callback
