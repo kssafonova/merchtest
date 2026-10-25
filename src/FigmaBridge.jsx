@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UploadCloud, Link2, FileJson2, Layers3, Check, X, Image as Picture, AlertTriangle } from 'lucide-react';
 import { convertFigmaFile, makeFigmaSection, updateImportedText, parseFigmaUrl } from './figma-bridge.mjs';
+import {FIGMA_SESSION_KEY, FIGMA_PENDING_KEY, figmaBridgeUrl, rememberFigmaLink, extractFigmaSessionFromHash, importFigmaFromUrl} from './figma-hosted-client.mjs';
 
 const bounded=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
 const alignMain={MIN:'flex-start',CENTER:'center',MAX:'flex-end',SPACE_BETWEEN:'space-between'};
@@ -88,6 +89,9 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
   const [busy,setBusy]=useState(false);
   const [drag,setDrag]=useState(false);
   const [link,setLink]=useState('');
+  const [connected,setConnected]=useState(()=>Boolean(sessionStorage.getItem(FIGMA_SESSION_KEY)));
+  const [linkBusy,setLinkBusy]=useState(false);
+  const bridge=figmaBridgeUrl();
   const ref=useRef(null);
   async function load(file){
     if(!file)return;
@@ -101,6 +105,38 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
     finally{setBusy(false);}
   }
   useEffect(()=>{if(open&&initialFile)load(initialFile);},[open,initialFile]);
+  useEffect(()=>{
+    try{
+      const token=extractFigmaSessionFromHash(window.location.hash);
+      if(!token)return;
+      window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search);
+      setConnected(true);
+      const pending=sessionStorage.getItem(FIGMA_PENDING_KEY);
+      if(pending){sessionStorage.removeItem(FIGMA_PENDING_KEY);setLink(pending);loadLink(pending,token);}
+    }catch(e){setError(e.message||'Не удалось подключить Figma.');}
+  },[]);
+  async function loadLink(value,token=sessionStorage.getItem(FIGMA_SESSION_KEY)){
+    setError('');setLinkBusy(true);
+    try{
+      const next=await importFigmaFromUrl(value,{endpoint:bridge,session:token});
+      setDoc(next);setChosen(next.blocks.map((_,i)=>i));
+      if(next.warning)setError(next.warning);
+    }catch(e){
+      if(e.status===401){sessionStorage.removeItem(FIGMA_SESSION_KEY);setConnected(false);}
+      setError(e.message||'Не удалось импортировать макет по ссылке.');
+      setDoc(null);setChosen([]);
+    }finally{setLinkBusy(false);}
+  }
+  function submitLink(){
+    try{
+      parseFigmaUrl(link);
+      if(!bridge)throw Error('Для прямого импорта администратор должен один раз подключить облачный Figma OAuth. Пока можно использовать JSON-экспорт.');
+      const token=sessionStorage.getItem(FIGMA_SESSION_KEY);
+      if(token){loadLink(link,token);return;}
+      rememberFigmaLink(link);
+      window.location.assign(bridge+'/auth/start');
+    }catch(e){setError(e.message||'Не удалось обработать ссылку.');}
+  }
   useEffect(()=>{if(!open){setDoc(null);setChosen([]);setError('');setLink('');setMode('append');}},[open]);
   if(!open)return null;
   const selected=doc?.blocks.filter((_,i)=>chosen.includes(i))||[];
@@ -109,14 +145,18 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
     const f=[...(e.dataTransfer?.files||[])].find(f=>f.name.toLowerCase().endsWith('.json'));
     if(f)load(f);else setError('Перетащите JSON, экспортированный из Figma.');
   }
-  function checkLink(){
-    try{const parsed=parseFigmaUrl(link);setError('Ссылка распознана: '+parsed.fileKey+'. Для закрытого макета запустите локальный агент: npm run figma:pull -- "'+link+'". Затем перетащите полученный JSON сюда. Токен не хранится на сайте.');}
-    catch(e){setError(e.message);}
-  }
   return <div className="figma-import-backdrop-v97" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
     <div className="figma-import-dialog-v97" role="dialog" aria-modal="true" aria-labelledby="figma-import-title" onMouseDown={e=>e.stopPropagation()}>
       <header><div><span>DESIGN TO EDITOR</span><h2 id="figma-import-title">Импортировать из Figma</h2><p>Перенесите фреймы и их слои в редактируемые секции страницы.</p></div><button aria-label="Закрыть" onClick={onClose}><X size={20}/></button></header>
       <div className="figma-import-body-v97">
+        <div className="figma-link-primary-v99">
+          <div className="figma-link-header-v99"><Link2 size={18}/><div><strong>Импорт по ссылке</strong><small>Вставьте ссылку на файл или конкретный Frame из Figma.</small></div></div>
+          <div className="figma-link-controls-v99"><input type="url" aria-label="Ссылка на Figma" value={link} onChange={e=>{setLink(e.target.value);setError('');}} onKeyDown={e=>{if(e.key==='Enter')submitLink();}} placeholder="https://www.figma.com/design/…" />
+            <button type="button" className="primary" disabled={!link.trim()||linkBusy} onClick={submitLink}>{linkBusy?'Загружаю…':connected?'Загрузить макет':'Импортировать'}</button>
+          </div>
+          <p className="figma-link-status-v99">{!bridge?'Для импорта без файлов нужно подключить сервер OAuth — пока он не настроен.':connected?'Figma подключена. Можно вставлять ссылки на доступные макеты.':'Если макет требует доступа, откроется безопасный вход в Figma. Вводить токен не нужно.'}</p>
+        </div>
+        <div className="figma-import-separator-v99"><span>ИЛИ ИМПОРТИРУЙТЕ JSON</span></div>
         <div className={'figma-import-zone-v97'+(drag?' dragging':'')} onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={drop}>
           <UploadCloud size={28}/>
           <strong>Перетащите экспорт Figma (.json)</strong>
@@ -125,10 +165,6 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           <button type="button" onClick={()=>ref.current?.click()}>Выбрать JSON</button>
           <small>Поддерживаются Figma API JSON и экспорт плагина. Максимум 30 МБ.</small>
         </div>
-        <details className="figma-link-help-v97"><summary><Link2 size={15}/> Есть ссылка на Figma?</summary>
-          <p>На GitHub Pages нельзя безопасно хранить токен Figma. Используйте локальный агент или плагин экспорта из репозитория.</p>
-          <div><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://www.figma.com/design/…"/><button onClick={checkLink}>Как импортировать</button></div>
-        </details>
         {error&&<div className="figma-import-warning-v97" role="status"><AlertTriangle size={16}/><span>{error}</span></div>}
         {busy&&<div className="figma-import-busy-v97">Чтение слоёв Figma…</div>}
         {doc&&<div className="figma-import-review-v97">
@@ -141,7 +177,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           <div className="figma-import-mode-v97"><strong>Куда добавить?</strong><label><input type="radio" name="figma-import-mode" checked={mode==='append'} onChange={()=>setMode('append')}/><span><b>В конец текущей страницы</b><small>Существующие секции останутся без изменений.</small></span></label><label><input type="radio" name="figma-import-mode" checked={mode==='replace'} onChange={()=>setMode('replace')}/><span><b>Заменить секции страницы</b><small>Можно отменить через Undo до перезагрузки.</small></span></label></div>
         </div>}
       </div>
-      <footer><span>{doc?selected.length+' фреймов выбрано':'Данные импортируются только в текущий редактор'}</span><button onClick={onClose}>Отмена</button><button className="primary" disabled={!selected.length||busy} onClick={()=>{if(mode==='replace'&&!window.confirm('Заменить все секции текущей страницы импортированным дизайном?'))return;onImport(selected.map((x,i)=>makeFigmaSection(x,i)),mode);}}>Импортировать {selected.length||''}</button></footer>
+      <footer><span>{doc?selected.length+' фреймов выбрано':'Данные импортируются только в текущий редактор'}</span><button onClick={onClose}>Отмена</button><button className="primary" disabled={!selected.length||busy||linkBusy} onClick={()=>{if(mode==='replace'&&!window.confirm('Заменить все секции текущей страницы импортированным дизайном?'))return;onImport(selected.map((x,i)=>makeFigmaSection(x,i)),mode);}}>Импортировать {selected.length||''}</button></footer>
     </div>
   </div>;
 }
