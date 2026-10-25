@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UploadCloud, Link2, FileJson2, Layers3, Check, X, Image as Picture, AlertTriangle } from 'lucide-react';
 import { convertFigmaFile, makeFigmaSection, updateImportedText, parseFigmaUrl } from './figma-bridge.mjs';
 import {FIGMA_SESSION_KEY, FIGMA_PENDING_KEY, figmaBridgeUrl, rememberFigmaLink, extractFigmaSessionFromHash, importFigmaFromUrl} from './figma-hosted-client.mjs';
+import {makeFigmaSlotSection,inspectFigmaSlots} from './figma-slot-import.mjs';
 
 const bounded=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
 const alignMain={MIN:'flex-start',CENTER:'center',MAX:'flex-end',SPACE_BETWEEN:'space-between'};
@@ -139,7 +140,10 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
   }
   useEffect(()=>{if(!open){setDoc(null);setChosen([]);setError('');setLink('');setMode('append');}},[open]);
   if(!open)return null;
+  const previews=doc?.blocks.map(block=>{try{return {result:inspectFigmaSlots(block),error:null};}catch(e){return {result:null,error:e.message||'Не удалось определить слоты.'};}})||[];
   const selected=doc?.blocks.filter((_,i)=>chosen.includes(i))||[];
+  const selectedInvalid=chosen.filter(i=>previews[i]?.error);
+  const validCount=chosen.length-selectedInvalid.length;
   function drop(e){
     e.preventDefault();e.stopPropagation();setDrag(false);
     const f=[...(e.dataTransfer?.files||[])].find(f=>f.name.toLowerCase().endsWith('.json'));
@@ -147,7 +151,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
   }
   return <div className="figma-import-backdrop-v97" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
     <div className="figma-import-dialog-v97" role="dialog" aria-modal="true" aria-labelledby="figma-import-title" onMouseDown={e=>e.stopPropagation()}>
-      <header><div><span>DESIGN TO EDITOR</span><h2 id="figma-import-title">Импортировать из Figma</h2><p>Перенесите фреймы и их слои в редактируемые секции страницы.</p></div><button aria-label="Закрыть" onClick={onClose}><X size={20}/></button></header>
+      <header><div><span>DESIGN TO EDITOR</span><h2 id="figma-import-title">Создать секции по макету Figma</h2><p>Figma задаёт расположение и размер слотов. Сами слоты останутся пустыми: добавьте товары, образы, изображения или настройте автонаполнение в редакторе.</p></div><button aria-label="Закрыть" onClick={onClose}><X size={20}/></button></header>
       <div className="figma-import-body-v97">
         <div className="figma-link-primary-v99">
           <div className="figma-link-header-v99"><Link2 size={18}/><div><strong>Импорт по ссылке</strong><small>Вставьте ссылку на файл или конкретный Frame из Figma.</small></div></div>
@@ -168,16 +172,17 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
         {error&&<div className="figma-import-warning-v97" role="status"><AlertTriangle size={16}/><span>{error}</span></div>}
         {busy&&<div className="figma-import-busy-v97">Чтение слоёв Figma…</div>}
         {doc&&<div className="figma-import-review-v97">
-          <div className="figma-review-title-v97"><div><strong>Найдено фреймов: {doc.blocks.length}</strong><small>{doc.source} · отметьте те, которые нужно добавить</small></div><button onClick={()=>setChosen(chosen.length===doc.blocks.length?[]:doc.blocks.map((_,i)=>i))}>{chosen.length===doc.blocks.length?'Снять выбор':'Выбрать все'}</button></div>
+          <div className="figma-review-title-v97"><div><strong>Найдено макетов: {doc.blocks.length}</strong><small>{doc.source} · каждый фрейм создаст отдельный тайп со слотами</small></div><button onClick={()=>setChosen(chosen.length===doc.blocks.length?[]:doc.blocks.map((_,i)=>i))}>{chosen.length===doc.blocks.length?'Снять выбор':'Выбрать все'}</button></div>
           <div className="figma-review-list-v97">{doc.blocks.map((block,i)=><label key={block.id+'-'+i} className={chosen.includes(i)?'picked':''}>
             <input type="checkbox" checked={chosen.includes(i)} onChange={e=>setChosen(s=>e.target.checked?[...s,i]:s.filter(n=>n!==i))}/>
-            <span className="figma-frame-icon-v97"><Layers3 size={20}/></span><span><strong>{block.name}</strong><small>{Math.round(block.box?.w||0)} × {Math.round(block.box?.h||0)} px · {(block.children||[]).length} верхних слоёв</small></span>
+            <span className="figma-frame-icon-v97"><Layers3 size={20}/></span><span><strong>{block.name}</strong><small>{previews[i]?.error?'Нужно исправить Figma: '+previews[i].error:previews[i]?.result.count+' пустых слотов · адаптивная сетка 12/4'} · {Math.round(block.box?.w||0)} × {Math.round(block.box?.h||0)} px</small></span>
             {chosen.includes(i)&&<Check size={16}/>}
           </label>)}</div>
+          <div className="figma-slot-explanation-v100"><strong>Что произойдёт после импорта</strong><p>Создадим тайп с геометрией из Figma. Слоты останутся пустыми и будут работать как обычные слоты редактора: можно перетащить контент, закрепить PIN или включить автонаполнение. Макет появится в библиотеке секций для повторного использования.</p>{selectedInvalid.length>0&&<p className="figma-slot-error-v100">Проверьте выделенные макеты: {selectedInvalid.length} не удалось перевести в сетку без пересечений.</p>}</div>
           <div className="figma-import-mode-v97"><strong>Куда добавить?</strong><label><input type="radio" name="figma-import-mode" checked={mode==='append'} onChange={()=>setMode('append')}/><span><b>В конец текущей страницы</b><small>Существующие секции останутся без изменений.</small></span></label><label><input type="radio" name="figma-import-mode" checked={mode==='replace'} onChange={()=>setMode('replace')}/><span><b>Заменить секции страницы</b><small>Можно отменить через Undo до перезагрузки.</small></span></label></div>
         </div>}
       </div>
-      <footer><span>{doc?selected.length+' фреймов выбрано':'Данные импортируются только в текущий редактор'}</span><button onClick={onClose}>Отмена</button><button className="primary" disabled={!selected.length||busy||linkBusy} onClick={()=>{if(mode==='replace'&&!window.confirm('Заменить все секции текущей страницы импортированным дизайном?'))return;onImport(selected.map((x,i)=>makeFigmaSection(x,i)),mode);}}>Импортировать {selected.length||''}</button></footer>
+      <footer><span>{doc?validCount+' макетов · '+selected.reduce((sum,block)=>sum+(previews[doc.blocks.indexOf(block)]?.result?.count||0),0)+' пустых слотов':'Контент импортирован не будет — только структура слотов'}</span><button onClick={onClose}>Отмена</button><button className="primary" disabled={!selected.length||selectedInvalid.length>0||busy||linkBusy} onClick={()=>{if(mode==='replace'&&!window.confirm('Заменить все секции текущей страницы макетами из Figma?'))return;try{onImport(selected.map((x,i)=>makeFigmaSlotSection(x,i)),mode);}catch(e){setError(e.message||'Не удалось создать секции из Figma.');}}}>Создать {selected.length||''} {selected.length===1?'секцию':'секции'}</button></footer>
     </div>
   </div>;
 }
