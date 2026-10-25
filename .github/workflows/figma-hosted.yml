@@ -1,0 +1,29 @@
+name: Deploy Figma OAuth Bridge
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Deploy OAuth bridge
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: figma-hosted
+          command: deploy
+          secrets: |
+            FIGMA_CLIENT_ID
+            FIGMA_CLIENT_SECRET
+            SESSION_SECRET
+        env:
+          FIGMA_CLIENT_ID: ${{ secrets.FIGMA_CLIENT_ID }}
+          FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
+          SESSION_SECRET: ${{ secrets.FIGMA_SESSION_SECRET }}
