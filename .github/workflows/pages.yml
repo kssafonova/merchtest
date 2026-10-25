@@ -26,6 +26,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+      - name: Test Figma bridge
+        run: npm run test:figma
       - name: Build
         run: npm run build
       - name: Configure GitHub Pages
