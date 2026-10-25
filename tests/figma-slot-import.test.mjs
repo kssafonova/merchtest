@@ -286,9 +286,10 @@ test('Overlapping mobile frames import with same slot bindings, independent laye
   assert.equal(type.containers[0].figmaOverlayV111,true);
   assert.equal(type.mobileContainers[0].figmaOverlayV111,true);
   assert.deepEqual(type.mobileContainers[0].figmaFrameV111,{width:390,height:800});
-  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.slotIndex),[1,0]);
-  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.figmaLayerOrderV111),[0,1]);
+  // Mobile is sorted by visual position but paints in the original Figma order.
+  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.slotIndex),[0,1]);
+  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.figmaLayerOrderV111),[1,0]);
   assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.sourceBox),[
-    {x:45,y:170,w:300,h:400},{x:0,y:0,w:390,h:800},
+    {x:0,y:0,w:390,h:800},{x:45,y:170,w:300,h:400},
   ]);
 });
