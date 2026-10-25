@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {deriveFigmaSlotTemplate,makeFigmaSlotSection,inspectFigmaSlots} from '../src/figma-slot-import.mjs';
+import {convertFigmaFile} from '../src/figma-bridge.mjs';
 
 const node=(id,name,x,y,w,h,children=[],kind='container')=>({id,name,kind,box:{x,y,w,h},children});
 test('12-column Figma mosaic is a native slot grid with shared desktop and mobile indices',()=>{
@@ -71,4 +72,66 @@ test('Empty frame can become a single full width slot',()=>{
   const result=deriveFigmaSlotTemplate(design);
   assert.equal(result.containers[0].slots.length,1);
   assert.equal(result.containers[0].slots[0].span,12);
+});
+
+
+// Exact compact JSON structure supplied by the user, including nested GRID frames
+// and relative x/y coordinates. No id / absoluteBoundingBox / REST wrapper.
+const compactFigmaExample=[
+  {name:'Frame 5',type:'COMPONENT',x:88,y:-27,width:62,height:51,children:[
+    {name:'Frame 2',type:'FRAME',x:0,y:28,width:62,height:23,children:[
+      {type:'VECTOR',x:0,y:0,width:20,height:23},
+      {type:'VECTOR',x:21,y:0,width:20,height:23},
+      {type:'VECTOR',x:42,y:0,width:20,height:23},
+    ],layoutMode:'GRID',primaryAxisSizingMode:'FIXED',counterAxisSizingMode:'FIXED',
+      primaryAxisAlignItems:'MIN',counterAxisAlignItems:'MIN',
+      tailwind:{width:'w-62',height:'h-23',flex:'flex',justifyContent:'justify-start',alignItems:'items-start'}},
+    {name:'Frame 1',type:'FRAME',x:0,y:0,width:62,height:25,children:[
+      {type:'VECTOR',x:0,y:0,width:19,height:25},
+      {type:'VECTOR',x:20,y:0,width:41,height:25},
+    ],layoutMode:'GRID',primaryAxisSizingMode:'FIXED',counterAxisSizingMode:'FIXED',
+      primaryAxisAlignItems:'MIN',counterAxisAlignItems:'MIN',itemSpacing:1,
+      tailwind:{width:'w-62',height:'h-25',flex:'flex gap-1',justifyContent:'justify-start',alignItems:'items-start'}},
+  ],layoutMode:'NONE',primaryAxisSizingMode:'AUTO',counterAxisSizingMode:'FIXED',
+    primaryAxisAlignItems:'MIN',counterAxisAlignItems:'MIN',
+    tailwind:{width:'w-62',height:'h-51',marginLeft:'ml-88',flex:'flex',justifyContent:'justify-start',alignItems:'items-start'}},
+];
+test('user compact Figma JSON array parses nested relative positions and GRID safely',()=>{
+  const doc=convertFigmaFile(compactFigmaExample);
+  assert.equal(doc.blocks.length,1);
+  const root=doc.blocks[0];
+  assert.equal(root.name,'Frame 5');
+  assert.deepEqual(root.box,{x:88,y:-27,w:62,h:51});
+  assert.equal(root.children[0].layout,'grid');
+  assert.deepEqual(root.children[0].box,{x:88,y:1,w:62,h:23});
+  assert.deepEqual(root.children[0].children[1].box,{x:109,y:1,w:20,h:23});
+  assert.deepEqual(root.children[1].box,{x:88,y:-27,w:62,h:25});
+  assert.deepEqual(root.children[1].children[1].box,{x:108,y:-27,w:41,h:25});
+  assert.notEqual(root.children[0].children[1].id,root.children[0].children[2].id);
+  assert.equal(root.children[0].children[0].sourceType,'VECTOR');
+});
+test('tiny vector COMPONENT is identified as an icon, not five merchandise slots',()=>{
+  const doc=convertFigmaFile(compactFigmaExample);
+  assert.throws(()=>inspectFigmaSlots(doc.blocks[0]),/62×51 px похож на иконку/);
+});
+test('compact JSON with explicitly labeled Frame slots creates native template',()=>{
+  const json=[{name:'Editorial',type:'FRAME',x:88,y:-27,width:1200,height:600,
+    layoutMode:'GRID',children:[
+      {name:'Slot 1',type:'FRAME',x:0,y:0,width:800,height:600,children:[
+        {type:'VECTOR',x:20,y:20,width:40,height:40},
+      ]},
+      {name:'Slot 2',type:'FRAME',x:800,y:0,width:400,height:300,children:[
+        {type:'TEXT',x:10,y:10,width:160,height:30,characters:'Sample'},
+      ]},
+      {name:'Slot 3',type:'FRAME',x:800,y:300,width:400,height:300},
+    ],
+  }];
+  const converted=convertFigmaFile(json);
+  const section=makeFigmaSlotSection(converted.blocks[0]);
+  assert.deepEqual(section.template.containers[0].slots.map(({start,span,rowStart,rows})=>[start,span,rowStart,rows]),[
+    [1,8,1,2],[9,4,1,1],[9,4,2,1],
+  ]);
+  assert.deepEqual(section.pins,{});
+  assert.equal(section.rules.mode,'manual');
+  assert.equal(section.template.mobileContainers[0].cols,4);
 });
