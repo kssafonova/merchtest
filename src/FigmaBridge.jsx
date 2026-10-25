@@ -90,10 +90,20 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
   const [busy,setBusy]=useState(false);
   const [drag,setDrag]=useState(false);
   const [link,setLink]=useState('');
+  const [jsonText,setJsonText]=useState('');
   const [connected,setConnected]=useState(()=>typeof sessionStorage!=='undefined' && Boolean(sessionStorage.getItem(FIGMA_SESSION_KEY)));
   const [linkBusy,setLinkBusy]=useState(false);
   const bridge=figmaBridgeUrl();
   const ref=useRef(null);
+  function loadPastedJson(){
+    setError('');setDoc(null);setChosen([]);
+    try{
+      if(jsonText.length>10*1024*1024)throw Error('Слишком большой JSON. Используйте импорт из файла.');
+      const source=JSON.parse(jsonText);
+      const next=convertFigmaFile(source);
+      setDoc(next);setChosen(next.blocks.map((_,i)=>i));
+    }catch(e){setError('Ошибка JSON: '+(e?.message||'Не удалось распознать макет.'));}
+  }
   async function load(file){
     if(!file)return;
     setError('');setBusy(true);
@@ -138,7 +148,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
       window.location.assign(bridge+'/auth/start');
     }catch(e){setError(e.message||'Не удалось обработать ссылку.');}
   }
-  useEffect(()=>{if(!open){setDoc(null);setChosen([]);setError('');setLink('');setMode('append');}},[open]);
+  useEffect(()=>{if(!open){setDoc(null);setChosen([]);setError('');setLink('');setJsonText('');setMode('append');}},[open]);
   if(!open)return null;
   const previews=doc?.blocks.map(block=>{try{return {result:inspectFigmaSlots(block),error:null};}catch(e){return {result:null,error:e.message||'Не удалось определить слоты.'};}})||[];
   const selected=doc?.blocks.filter((_,i)=>chosen.includes(i))||[];
@@ -169,6 +179,14 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           <button type="button" onClick={()=>ref.current?.click()}>Выбрать JSON</button>
           <small>Поддерживаются Figma API JSON и экспорт плагина. Максимум 30 МБ.</small>
         </div>
+        <details className="figma-paste-json-v101">
+          <summary><FileJson2 size={15}/> Вставить JSON-код из Figma</summary>
+          <div className="figma-paste-form-v101">
+            <label htmlFor="figma-json-paste-v101">Вставьте массив фреймов или объект Figma JSON</label>
+            <textarea id="figma-json-paste-v101" rows={5} spellCheck={false} placeholder='[{"name":"Frame 1","type":"FRAME","x":0,"y":0,"width":1200,"height":600,"children":[...]}]' value={jsonText} onChange={e=>setJsonText(e.target.value)}/>
+            <button type="button" onClick={loadPastedJson} disabled={!jsonText.trim()||busy||linkBusy}>Проверить макет и слоты</button>
+          </div>
+        </details>
         {error&&<div className="figma-import-warning-v97" role="status"><AlertTriangle size={16}/><span>{error}</span></div>}
         {busy&&<div className="figma-import-busy-v97">Чтение слоёв Figma…</div>}
         {doc&&<div className="figma-import-review-v97">
