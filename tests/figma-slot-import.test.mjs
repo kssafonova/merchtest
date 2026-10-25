@@ -156,3 +156,57 @@ test('tiny Figma icon can be deliberately interpreted as a five-slot 2+3 layout'
   assert.deepEqual(section.pins,{});
   assert.equal(section.template.mobileContainers[0].slots.length,5);
 });
+
+
+// The later example includes absoluteRenderBounds + relativeTransform on each
+// leaf frame. Absolute coordinates must win over parent offsets.
+const detailedFrameExport={
+  type:'FRAME',id:'10:13',name:'Frame 8',x:88,y:-27,width:62,height:51,
+  visible:true,locked:false,opacity:1,relativeTransform:[[1,0,88],[0,1,-27]],
+  absoluteRenderBounds:{x:88,y:-27,width:62,height:51},fillGeometry:[{windingRule:'NONZERO',data:'M0 0 L62 0 L62 51 L0 51 L0 0 Z'}],
+  fills:[],strokes:[],effects:[],
+  children:[
+    {type:'FRAME',id:'2:10',name:'Frame 2',x:0,y:28,width:62,height:23,
+      relativeTransform:[[1,0,0],[0,1,28]],absoluteRenderBounds:{x:88,y:1,width:62,height:23},children:[
+      {type:'FRAME',id:'10:4',name:'Frame 1',x:0,y:0,width:20,height:23,
+        relativeTransform:[[1,0,0],[0,1,0]],absoluteRenderBounds:{x:88,y:1,width:20,height:23},fillGeometry:[{data:'M0 0 L20 0 L20 23 L0 23 Z'}],fills:[],strokes:[],effects:[]},
+      {type:'FRAME',id:'10:5',name:'Frame 2',x:21,y:0,width:20,height:23,
+        relativeTransform:[[1,0,21],[0,1,0]],absoluteRenderBounds:{x:109,y:1,width:20,height:23},fillGeometry:[{data:'M0 0 L20 0 L20 23 L0 23 Z'}],fills:[],strokes:[],effects:[]},
+      {type:'FRAME',id:'10:6',name:'Frame 3',x:42,y:0,width:20,height:23,
+        relativeTransform:[[1,0,42],[0,1,0]],absoluteRenderBounds:{x:130,y:1,width:20,height:23},fillGeometry:[{data:'M0 0 L20 0 L20 23 L0 23 Z'}],fills:[],strokes:[],effects:[]},
+    ]},
+    {type:'FRAME',id:'3:11',name:'Frame 1',x:0,y:0,width:62,height:25,
+      relativeTransform:[[1,0,0],[0,1,0]],absoluteRenderBounds:{x:88,y:-27,width:62,height:25},children:[
+      {type:'FRAME',id:'10:3',name:'Frame 1',x:0,y:0,width:19,height:25,
+        absoluteRenderBounds:{x:88,y:-27,width:19,height:25},relativeTransform:[[1,0,0],[0,1,0]],fills:[],strokes:[]},
+      {type:'FRAME',id:'10:2',name:'Frame 2',x:20,y:0,width:41,height:25,
+        absoluteRenderBounds:{x:108,y:-27,width:41,height:25},relativeTransform:[[1,0,20],[0,1,0]],fills:[],strokes:[]},
+    ]},
+  ],
+};
+test('full user JSON exports five child Frames without double-additive coordinates',()=>{
+  const doc=convertFigmaFile(detailedFrameExport);
+  assert.equal(doc.blocks.length,1);
+  const frame=doc.blocks[0];
+  assert.deepEqual(frame.box,{x:88,y:-27,w:62,h:51});
+  assert.deepEqual(frame.children[0].box,{x:88,y:1,w:62,h:23});
+  assert.deepEqual(frame.children[0].children[2].box,{x:130,y:1,w:20,h:23});
+  assert.deepEqual(frame.children[1].children[1].box,{x:108,y:-27,w:41,h:25});
+  assert.equal(isCompactVectorDiagram(frame),true);
+  assert.throws(()=>inspectFigmaSlots(frame),/миниатюру схемы/);
+  const review=inspectFigmaSlots(frame,{interpretMiniature:true});
+  assert.equal(review.count,5);
+  assert.equal(review.method,'miniature');
+  assert.deepEqual(review.desktop.map(s=>[s.name,s.start,s.span,s.rowStart,s.rows]),[
+    ['Слот 1',1,4,1,1],
+    ['Слот 2',5,8,1,1],
+    ['Слот 3',1,4,2,1],
+    ['Слот 4',5,4,2,1],
+    ['Слот 5',9,4,2,1],
+  ]);
+  const section=makeFigmaSlotSection(frame,0,{interpretMiniature:true});
+  assert.equal(section.template.layoutV2,true);
+  assert.deepEqual(section.pins,{});
+  assert.equal(section.figmaNode,undefined);
+  assert.equal(section.template.mobileContainers[0].cols,4);
+});
