@@ -241,10 +241,20 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
                   const slots=previews[i].result[device];
                   const cols=device==='desktop'?12:4;
                   const rows=Math.max(1,...slots.map(x=>x.rowStart+x.rows-1));
+                  const layered=device==='desktop'?previews[i].result.desktopOverlap:previews[i].result.mobileOverlap;
+                  const frame=previews[i].result[device+'Frame']||{width:1,height:1};
+                  const miniStyle=slot=>{
+                    if(!layered)return {gridColumn:slot.start+' / span '+slot.span,gridRow:slot.rowStart+' / span '+slot.rows};
+                    const b=slot.sourceBox||{x:0,y:0,w:1,h:1};
+                    const pct=(n,d)=>String(Math.round(n/Math.max(1,d)*10000)/100)+'%';
+                    return {'--mini-x-v111':pct(b.x,frame.width),'--mini-y-v111':pct(b.y,frame.height),
+                      '--mini-w-v111':pct(b.w,frame.width),'--mini-h-v111':pct(b.h,frame.height),
+                      '--mini-z-v111':String((slot.layerOrder??0)+1)};
+                  };
                   return <div className={'figma-section-device-v106 '+device} key={device}>
-                    <strong>{device==='desktop'?'Desktop · 12 колонок':'Mobile · 4 колонки'} {device==='mobile'&&<small>{previews[i].result.mobileMode==='imported'?'из Figma':'автоматически'}</small>}</strong>
-                    <div className="figma-section-mini-grid-v106" style={{gridTemplateColumns:'repeat('+cols+',minmax(0,1fr))',gridTemplateRows:'repeat('+rows+',minmax(18px,1fr))'}}>
-                      {slots.map((slot,k)=><span key={k} style={{gridColumn:slot.start+' / span '+slot.span,gridRow:slot.rowStart+' / span '+slot.rows}} title={slot.name}>{Number.isInteger(slot.slotIndex)?slot.slotIndex+1:k+1}</span>)}
+                    <strong>{device==='desktop'?'Desktop · 12 колонок':'Mobile · 4 колонки'} {device==='mobile'&&<small>{previews[i].result.mobileMode==='imported'?'из Figma':'автоматически'}</small>}{layered&&<small>Наложение слоёв</small>}</strong>
+                    <div className={'figma-section-mini-grid-v106'+(layered?' figma-mini-overlap-v111':'')} style={layered?{}:{gridTemplateColumns:'repeat('+cols+',minmax(0,1fr))',gridTemplateRows:'repeat('+rows+',minmax(18px,1fr))'}}>
+                      {slots.map((slot,k)=><span key={k} style={miniStyle(slot)} title={slot.name}>{Number.isInteger(slot.slotIndex)?slot.slotIndex+1:k+1}</span>)}
                     </div>
                   </div>;
                 })}
