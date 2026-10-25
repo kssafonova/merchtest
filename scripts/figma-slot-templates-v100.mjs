@@ -43,4 +43,12 @@ if(!css.includes('/* figma-json-paste-v101 */')){css+=String.raw`
 .figma-paste-form-v101 button{justify-self:start;min-height:36px;border-radius:7px;background:#fff;color:#245bc3;border:1px solid #245bc3;padding:0 12px;font-size:11px;font-weight:700;cursor:pointer}
 .figma-paste-form-v101 button:disabled{opacity:.4;cursor:default}
 `;writeFileSync(cssPath,css);}
+if(!css.includes('/* figma-miniature-toggle-v102 */')){css+=String.raw`
+/* figma-miniature-toggle-v102 */
+.figma-miniature-option-v102{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;background:#fff9ec;border:1px solid #eedbb1;border-radius:9px;cursor:pointer}
+.figma-miniature-option-v102 input{width:16px;height:16px;flex:0 0 auto;margin:2px 0 0;accent-color:#245bc3}
+.figma-miniature-option-v102 span{display:grid;gap:5px}
+.figma-miniature-option-v102 strong{color:#6c4f1e;font-size:12px;font-weight:750}
+.figma-miniature-option-v102 small{font-size:10.5px;line-height:1.5;color:#7b643c}
+`;writeFileSync(cssPath,css);}
 console.log('V100 applied: imported Figma layouts have reusable native content slots');
