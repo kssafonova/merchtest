@@ -95,8 +95,8 @@ export function parseFigmaUrl(url){
   let u;
   try{u=new URL(url);}catch{throw Error('Введите ссылку на файл или фрейм Figma.');}
   if(!/^(www\.)?figma\.com$/i.test(u.hostname))throw Error('Нужна ссылка figma.com.');
-  const m=u.pathname.match(/^\/(?:design|file)\/([A-Za-z0-9]+)(?:\/|$)/);
-  if(!m)throw Error('Ссылка должна вести на Figma Design файл.');
+  const m=u.pathname.match(/^\/(?:design|file|proto)\/([A-Za-z0-9]+)(?:\/|$)/);
+  if(!m)throw Error('Ссылка должна вести на файл Figma Design или Prototype.');
   const raw=u.searchParams.get('node-id');
   return {fileKey:m[1],nodeId:raw?raw.replace(/-/g,':'):null};
 }
