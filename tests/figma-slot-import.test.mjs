@@ -210,3 +210,35 @@ test('full user JSON exports five child Frames without double-additive coordinat
   assert.equal(section.figmaNode,undefined);
   assert.equal(section.template.mobileContainers[0].cols,4);
 });
+
+
+test('one Section component supports different mobile placement with shared content slot indices',()=>{
+  const desktop=node('f:1','Desktop editorial',0,0,1200,600,[
+    node('f:2','Slot 1',0,0,800,600),
+    node('f:3','Slot 2',800,0,400,300),
+    node('f:4','Slot 3',800,300,400,300),
+  ]);
+  const mobile=node('m:1','Mobile editorial',0,0,375,800,[
+    node('m:2','Slot 2',0,0,185,300),
+    node('m:3','Slot 3',190,0,185,300),
+    node('m:4','Slot 1',0,300,375,500),
+  ]);
+  const section=makeFigmaSlotSection(desktop,0,{mobileBlock:mobile,name:'Editorial · Новинки'});
+  assert.equal(section.template.category,'Секция');
+  assert.equal(section.template.componentKind,'Секция');
+  assert.equal(section.titles.ru,'Editorial · Новинки');
+  assert.equal(section.template.containers[0].cols,12);
+  assert.equal(section.template.mobileContainers[0].cols,4);
+  assert.deepEqual(section.template.mobileContainers[0].slots.map(x=>x.slotIndex),[1,2,0]);
+  assert.deepEqual(section.pins,{});
+  assert.equal(section.template.figmaMetaV100.mobileMode,'imported');
+  assert.equal(section.template.figmaMetaV100.mobileMapping,'name');
+});
+test('mobile layout must represent every content slot once',()=>{
+  const desktop=node('f:8','Desktop',0,0,1200,400,[
+    node('f:9','Slot 1',0,0,600,400),
+    node('f:10','Slot 2',600,0,600,400),
+  ]);
+  const mobile=node('m:8','Mobile',0,0,375,550,[node('m:9','Slot 1',0,0,375,550)]);
+  assert.throws(()=>makeFigmaSlotSection(desktop,0,{mobileBlock:mobile}),/Число слотов должно совпадать/);
+});
