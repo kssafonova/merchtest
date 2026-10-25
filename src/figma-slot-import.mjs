@@ -21,9 +21,41 @@ function usable(box,root){
   return box.w>=Math.max(35,root.w*0.085)&&box.h>=Math.max(40,root.h*0.085)&&
     box.w<=root.w*1.15&&box.h<=root.h*1.15;
 }
-function visualCandidates(block){
+export function isCompactVectorDiagram(block){
+  if(!block||typeof block!=='object')return false;
+  const b=rect(block);
+  if(!(b.w>10&&b.h>10&&(b.w<100||b.h<60)))return false;
+  let vectors=0;
+  const visit=(node,depth)=>{
+    if(depth>12)return;
+    if(node?.sourceType==='VECTOR')vectors++;
+    for(const child of node?.children||[])visit(child,depth+1);
+  };
+  visit(block,0);
+  return vectors>=2&&vectors<=LIMIT;
+}
+function compactVectorCandidates(block){
   const root=rect(block);
-  if(root.w<100||root.h<60)throw Error('Фрейм '+Math.round(root.w)+'×'+Math.round(root.h)+' px похож на иконку или элемент интерфейса, а не на секцию со слотами. Создайте Frame секции и назовите области Slot 1, Slot 2 и т. д.');
+  const all=[];
+  const visit=(node,depth=0)=>{
+    if(depth>12)return;
+    if(node?.sourceType==='VECTOR'){
+      const b=rect(node);
+      if(b.w>=Math.max(3,root.w*.06)&&b.h>=Math.max(3,root.h*.1))all.push({node,box:b,depth,source:'miniature'});
+      return;
+    }
+    for(const child of node?.children||[])visit(child,depth+1);
+  };
+  visit(block);
+  if(all.length<2||all.length>LIMIT)throw Error('В миниатюре должно быть от 2 до 20 прямоугольных областей.');
+  return {source:'miniature',nodes:all};
+}
+function visualCandidates(block,options={}){
+  const root=rect(block);
+  if(root.w<100||root.h<60){
+    if(options.interpretMiniature&&isCompactVectorDiagram(block))return compactVectorCandidates(block);
+    throw Error('Фрейм '+Math.round(root.w)+'×'+Math.round(root.h)+' px похож на иконку или миниатюру схемы. Чтобы получить слоты из VECTOR, включите режим «Считать миниатюру схемой слотов».');
+  }
   const explicit=[],visual=[],geometry=[];
   function walk(node,depth=0){
     if(!node||depth>9||node.kind==='text')return;
@@ -108,7 +140,7 @@ function buildDesktop(slots,root){
     return {
       slotIndex:i,start,span,rowStart:top+1,rows:clamp(bottom-top,1,20),
       ratio:b.w>=b.h?'landscape':'portrait',
-      figmaLayerName:safeName(item.node.name)||'Слот '+(i+1),
+      figmaLayerName:item.source==='miniature'?'Слот '+(i+1):(safeName(item.node.name)||'Слот '+(i+1)),
       figmaNodeId:String(item.node.id||''),
       sourceBox:{x:rounded(b.x-root.x),y:rounded(b.y-root.y),w:rounded(b.w),h:rounded(b.h)},
     };
@@ -150,10 +182,10 @@ function container(cols,slots){
     slots,
   };
 }
-export function deriveFigmaSlotTemplate(block){
+export function deriveFigmaSlotTemplate(block,options={}){
   if(!block||typeof block!=='object')throw Error('Пустой фрейм Figma.');
   const root=rect(block);
-  const detected=visualCandidates(block);
+  const detected=visualCandidates(block,options);
   const candidates=cleanCandidates(detected.nodes,root);
   const slots=buildDesktop(candidates,root);
   return {
@@ -166,8 +198,8 @@ export function deriveFigmaSlotTemplate(block){
     figmaMetaV100:{frameId:String(block.id||''),frameName:safeName(block.name),sourceSize:root,method:detected.source},
   };
 }
-export function makeFigmaSlotSection(block,index=0){
-  const template=deriveFigmaSlotTemplate(block);
+export function makeFigmaSlotSection(block,index=0,options={}){
+  const template=deriveFigmaSlotTemplate(block,options);
   const id='S-'+template.id+'-'+index;
   const title=template.label;
   return {
@@ -177,8 +209,8 @@ export function makeFigmaSlotSection(block,index=0){
     rules:{mode:'manual',collection:'Все',stockMin:0,l7dMin:0,dedupe:true,oos:'fallback',emptyBehavior:'keep',ttl:15},
   };
 }
-export function inspectFigmaSlots(block){
-  const type=deriveFigmaSlotTemplate(block);
+export function inspectFigmaSlots(block,options={}){
+  const type=deriveFigmaSlotTemplate(block,options);
   return {
     count:type.containers[0].slots.length,
     method:type.figmaMetaV100.method,
