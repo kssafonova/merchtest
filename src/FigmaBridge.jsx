@@ -165,6 +165,29 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
     <div className="figma-import-dialog-v97" role="dialog" aria-modal="true" aria-labelledby="figma-import-title" onMouseDown={e=>e.stopPropagation()}>
       <header><div><span>DESIGN TO EDITOR</span><h2 id="figma-import-title">Создать секции по макету Figma</h2><p>Figma задаёт расположение и размер слотов. Сами слоты останутся пустыми: добавьте товары, образы, изображения или настройте автонаполнение в редакторе.</p></div><button aria-label="Закрыть" onClick={onClose}><X size={20}/></button></header>
       <div className="figma-import-body-v97">
+        <section className="figma-json-main-v103" aria-labelledby="figma-json-title-v103">
+          <div className="figma-json-main-heading-v103">
+            <FileJson2 size={19}/>
+            <div>
+              <strong id="figma-json-title-v103">Вставить JSON макета</strong>
+              <small>Скопируйте JSON из Figma и вставьте прямо сюда. Никаких файлов и OAuth не требуется.</small>
+            </div>
+          </div>
+          <label htmlFor="figma-json-paste-v101">JSON структуры секции</label>
+          <textarea id="figma-json-paste-v101" rows={12} spellCheck={false} autoCapitalize="off" autoCorrect="off"
+            placeholder={'{\n  "type": "FRAME",\n  "name": "Секция",\n  "x": 0, "y": 0,\n  "width": 1200, "height": 600,\n  "children": []\n}'}
+            value={jsonText} onChange={e=>{setJsonText(e.target.value);setError('');setDoc(null);setChosen([]);}}
+            onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();loadPastedJson();}}}/>
+          <div className="figma-json-main-actions-v103">
+            <span>{jsonText.trim()?jsonText.length.toLocaleString('ru-RU')+' символов':'Поддерживается объект FRAME, массив фреймов и Figma API JSON'}</span>
+            <div>
+              {jsonText.trim()&&<button type="button" className="figma-json-clear-v103" onClick={()=>{setJsonText('');setDoc(null);setChosen([]);setError('');}}>Очистить</button>}
+              <button type="button" className="figma-json-check-v103" onClick={loadPastedJson} disabled={!jsonText.trim()||busy||linkBusy}>Проверить JSON и слоты</button>
+            </div>
+          </div>
+        </section>
+        <details className="figma-import-alternatives-v103">
+          <summary>Другие способы импорта: ссылка Figma или файл .json</summary>
         <div className="figma-link-primary-v99">
           <div className="figma-link-header-v99"><Link2 size={18}/><div><strong>Импорт по ссылке</strong><small>Вставьте ссылку на файл или конкретный Frame из Figma.</small></div></div>
           <div className="figma-link-controls-v99"><input type="url" aria-label="Ссылка на Figma" value={link} onChange={e=>{setLink(e.target.value);setError('');}} onKeyDown={e=>{if(e.key==='Enter')submitLink();}} placeholder="https://www.figma.com/design/…" />
@@ -172,7 +195,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           </div>
           <p className="figma-link-status-v99">{!bridge?'Для импорта без файлов нужно подключить сервер OAuth — пока он не настроен.':connected?'Figma подключена. Можно вставлять ссылки на доступные макеты.':'Если макет требует доступа, откроется безопасный вход в Figma. Вводить токен не нужно.'}</p>
         </div>
-        <div className="figma-import-separator-v99"><span>ИЛИ ИМПОРТИРУЙТЕ JSON</span></div>
+        <div className="figma-import-separator-v99"><span>ИЛИ ЗАГРУЗИТЕ JSON-ФАЙЛ</span></div>
         <div className={'figma-import-zone-v97'+(drag?' dragging':'')} onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={drop}>
           <UploadCloud size={28}/>
           <strong>Перетащите экспорт Figma (.json)</strong>
@@ -181,13 +204,6 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
           <button type="button" onClick={()=>ref.current?.click()}>Выбрать JSON</button>
           <small>Поддерживаются Figma API JSON и экспорт плагина. Максимум 30 МБ.</small>
         </div>
-        <details className="figma-paste-json-v101">
-          <summary><FileJson2 size={15}/> Вставить JSON-код из Figma</summary>
-          <div className="figma-paste-form-v101">
-            <label htmlFor="figma-json-paste-v101">Вставьте массив фреймов или объект Figma JSON</label>
-            <textarea id="figma-json-paste-v101" rows={5} spellCheck={false} placeholder='[{"name":"Frame 1","type":"FRAME","x":0,"y":0,"width":1200,"height":600,"children":[...]}]' value={jsonText} onChange={e=>setJsonText(e.target.value)}/>
-            <button type="button" onClick={loadPastedJson} disabled={!jsonText.trim()||busy||linkBusy}>Проверить макет и слоты</button>
-          </div>
         </details>
         {error&&<div className="figma-import-warning-v97" role="status"><AlertTriangle size={16}/><span>{error}</span></div>}
         {busy&&<div className="figma-import-busy-v97">Чтение слоёв Figma…</div>}
