@@ -21,40 +21,45 @@ function usable(box,root){
   return box.w>=Math.max(35,root.w*0.085)&&box.h>=Math.max(40,root.h*0.085)&&
     box.w<=root.w*1.15&&box.h<=root.h*1.15;
 }
+function compactLayoutCandidates(block){
+  const root=rect(block);
+  const frames=[];
+  const shapes=[];
+  function walk(node,depth=0){
+    if(depth>12||!node)return;
+    const children=Array.isArray(node.children)?node.children:[];
+    if(depth>0&&!children.length){
+      const b=rect(node);
+      if(b.w>=Math.max(3,root.w*.06)&&b.h>=Math.max(3,root.h*.1)){
+        const item={node,box:b,depth,source:'miniature'};
+        if(['FRAME','INSTANCE','COMPONENT','RECTANGLE'].includes(node.sourceType))frames.push(item);
+        else if(node.sourceType==='VECTOR')shapes.push(item);
+      }
+    }
+    for(const child of children)walk(child,depth+1);
+  }
+  walk(block);
+  // A small icon may contain arbitrary vector paths; use them only on explicit
+  // user opt-in. Prefer structural FRAMES over paths when both are available.
+  const items=frames.length>=2?frames:shapes;
+  if(items.length<2||items.length>LIMIT)return null;
+  return {source:'miniature',nodes:items};
+}
 export function isCompactVectorDiagram(block){
   if(!block||typeof block!=='object')return false;
   const b=rect(block);
-  if(!(b.w>10&&b.h>10&&(b.w<100||b.h<60)))return false;
-  let vectors=0;
-  const visit=(node,depth)=>{
-    if(depth>12)return;
-    if(node?.sourceType==='VECTOR')vectors++;
-    for(const child of node?.children||[])visit(child,depth+1);
-  };
-  visit(block,0);
-  return vectors>=2&&vectors<=LIMIT;
+  return b.w>10&&b.h>10&&(b.w<100||b.h<60)&&Boolean(compactLayoutCandidates(block));
 }
 function compactVectorCandidates(block){
-  const root=rect(block);
-  const all=[];
-  const visit=(node,depth=0)=>{
-    if(depth>12)return;
-    if(node?.sourceType==='VECTOR'){
-      const b=rect(node);
-      if(b.w>=Math.max(3,root.w*.06)&&b.h>=Math.max(3,root.h*.1))all.push({node,box:b,depth,source:'miniature'});
-      return;
-    }
-    for(const child of node?.children||[])visit(child,depth+1);
-  };
-  visit(block);
-  if(all.length<2||all.length>LIMIT)throw Error('В миниатюре должно быть от 2 до 20 прямоугольных областей.');
-  return {source:'miniature',nodes:all};
+  const result=compactLayoutCandidates(block);
+  if(!result)throw Error('В миниатюре должно быть от 2 до 20 прямоугольных областей.');
+  return result;
 }
 function visualCandidates(block,options={}){
   const root=rect(block);
   if(root.w<100||root.h<60){
     if(options.interpretMiniature&&isCompactVectorDiagram(block))return compactVectorCandidates(block);
-    throw Error('Фрейм '+Math.round(root.w)+'×'+Math.round(root.h)+' px похож на иконку или миниатюру схемы. Чтобы получить слоты из VECTOR, включите режим «Считать миниатюру схемой слотов».');
+    throw Error('Фрейм '+Math.round(root.w)+'×'+Math.round(root.h)+' px похож на иконку или миниатюру схемы. Чтобы получить слоты из FRAME или VECTOR, включите режим «Считать миниатюру схемой слотов».');
   }
   const explicit=[],visual=[],geometry=[];
   function walk(node,depth=0){
