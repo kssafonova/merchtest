@@ -89,7 +89,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
   const [busy,setBusy]=useState(false);
   const [drag,setDrag]=useState(false);
   const [link,setLink]=useState('');
-  const [connected,setConnected]=useState(()=>Boolean(sessionStorage.getItem(FIGMA_SESSION_KEY)));
+  const [connected,setConnected]=useState(()=>typeof sessionStorage!=='undefined' && Boolean(sessionStorage.getItem(FIGMA_SESSION_KEY)));
   const [linkBusy,setLinkBusy]=useState(false);
   const bridge=figmaBridgeUrl();
   const ref=useRef(null);
