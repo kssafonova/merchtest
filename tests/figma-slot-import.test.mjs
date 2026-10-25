@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {deriveFigmaSlotTemplate,makeFigmaSlotSection,inspectFigmaSlots} from '../src/figma-slot-import.mjs';
+import {deriveFigmaSlotTemplate,makeFigmaSlotSection,inspectFigmaSlots,isCompactVectorDiagram} from '../src/figma-slot-import.mjs';
 import {convertFigmaFile} from '../src/figma-bridge.mjs';
 
 const node=(id,name,x,y,w,h,children=[],kind='container')=>({id,name,kind,box:{x,y,w,h},children});
@@ -134,4 +134,25 @@ test('compact JSON with explicitly labeled Frame slots creates native template',
   assert.deepEqual(section.pins,{});
   assert.equal(section.rules.mode,'manual');
   assert.equal(section.template.mobileContainers[0].cols,4);
+});
+
+
+test('tiny Figma icon can be deliberately interpreted as a five-slot 2+3 layout',()=>{
+  const doc=convertFigmaFile(compactFigmaExample);
+  const frame=doc.blocks[0];
+  assert.equal(isCompactVectorDiagram(frame),true);
+  const report=inspectFigmaSlots(frame,{interpretMiniature:true});
+  assert.equal(report.count,5);
+  assert.equal(report.method,'miniature');
+  assert.deepEqual(report.desktop.map(s=>[s.start,s.span,s.rowStart,s.rows]),[
+    [1,4,1,1],
+    [5,8,1,1],
+    [1,4,2,1],
+    [5,4,2,1],
+    [9,4,2,1],
+  ]);
+  const section=makeFigmaSlotSection(frame,0,{interpretMiniature:true});
+  assert.equal(section.rules.mode,'manual');
+  assert.deepEqual(section.pins,{});
+  assert.equal(section.template.mobileContainers[0].slots.length,5);
 });
