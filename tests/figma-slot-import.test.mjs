@@ -51,12 +51,41 @@ test('Named slot hides decorative children from slot discovery',()=>{
   ]);
   assert.equal(inspectFigmaSlots(design).count,1);
 });
-test('Overlapping slots are rejected instead of silently breaking the layout',()=>{
-  const design=node('10:1','Bad layout',0,0,1200,600,[
+test('Overlapping slots preserve original positions and paint order',()=>{
+  const design=node('10:1','Editorial overlap',0,0,1200,600,[
     node('10:2','Slot 1',0,0,800,600),
     node('10:3','Slot 2',400,0,800,600),
   ]);
-  assert.throws(()=>deriveFigmaSlotTemplate(design),/пересекаются/);
+  const type=deriveFigmaSlotTemplate(design);
+  assert.equal(type.containers[0].figmaOverlayV111,true);
+  assert.equal(type.mobileContainers[0].figmaOverlayV111,false);
+  assert.deepEqual(type.containers[0].figmaFrameV111,{width:1200,height:600});
+  const slots=type.containers[0].slots;
+  assert.deepEqual(slots.map(s=>s.slotIndex),[0,1]);
+  assert.deepEqual(slots.map(s=>s.sourceBox),[
+    {x:0,y:0,w:800,h:600},{x:400,y:0,w:800,h:600},
+  ]);
+  assert.deepEqual(slots.map(s=>s.figmaLayerOrderV111),[0,1]);
+  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.slotIndex),[0,1]);
+});
+test('Named Figma slots with identical coordinates are two distinct selectable layers',()=>{
+  const design=node('o:1','Full overlay',0,0,1200,700,[
+    node('o:2','Slot 1',0,0,1200,700),
+    node('o:3','Slot 2',0,0,1200,700),
+  ]);
+  const type=deriveFigmaSlotTemplate(design);
+  assert.equal(type.containers[0].slots.length,2);
+  assert.equal(type.containers[0].figmaOverlayV111,true);
+  assert.deepEqual(type.containers[0].slots.map(s=>s.figmaLayerOrderV111),[0,1]);
+});
+test('Import handles grid-quantization collision without altering Figma geometry',()=>{
+  const design=node('q:1','One-pixel gap',0,0,1200,600,[
+    node('q:2','Slot 1',0,0,601,600),
+    node('q:3','Slot 2',602,0,598,600),
+  ]);
+  const type=deriveFigmaSlotTemplate(design);
+  assert.equal(type.containers[0].slots.length,2);
+  assert.equal(type.containers[0].slots[1].sourceBox.x,602);
 });
 test('Background shapes do not become content slots',()=>{
   const design=node('11:1','Row',0,0,1200,500,[
@@ -241,4 +270,25 @@ test('mobile layout must represent every content slot once',()=>{
   ]);
   const mobile=node('m:8','Mobile',0,0,375,550,[node('m:9','Slot 1',0,0,375,550)]);
   assert.throws(()=>makeFigmaSlotSection(desktop,0,{mobileBlock:mobile}),/Число слотов должно совпадать/);
+});
+
+
+test('Overlapping mobile frames import with same slot bindings, independent layer order',()=>{
+  const desktop=node('ov:1','Desktop',0,0,1200,600,[
+    node('ov:2','Slot 1',0,0,900,600),
+    node('ov:3','Slot 2',400,100,600,350),
+  ]);
+  const mobile=node('ov:4','Mobile',0,0,390,800,[
+    node('ov:5','Slot 2',45,170,300,400),
+    node('ov:6','Slot 1',0,0,390,800),
+  ]);
+  const type=deriveFigmaSlotTemplate(desktop,{mobileBlock:mobile});
+  assert.equal(type.containers[0].figmaOverlayV111,true);
+  assert.equal(type.mobileContainers[0].figmaOverlayV111,true);
+  assert.deepEqual(type.mobileContainers[0].figmaFrameV111,{width:390,height:800});
+  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.slotIndex),[1,0]);
+  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.figmaLayerOrderV111),[0,1]);
+  assert.deepEqual(type.mobileContainers[0].slots.map(s=>s.sourceBox),[
+    {x:45,y:170,w:300,h:400},{x:0,y:0,w:390,h:800},
+  ]);
 });
