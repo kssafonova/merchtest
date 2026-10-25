@@ -38,7 +38,8 @@ try{
   nodes.forEach(n=>imageRefs(n,refs));
   const images={};
   if(refs.size){
-    const files=await getJson('files/'+fileKey+'/images');
+    let files={images:{}};
+    try{files=await getJson('files/'+fileKey+'/images');}catch(error){process.stderr.write('Не удалось получить изображения Figma; слои будут импортированы без них: '+error.message+'\n');}
     const entries=[...refs].slice(0,100);
     let done=0;
     for(const ref of entries){
