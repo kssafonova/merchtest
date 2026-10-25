@@ -29,6 +29,8 @@ jobs:
       - name: Test Figma bridge
         run: npm run test:figma
       - name: Build
+        env:
+          VITE_FIGMA_BRIDGE_URL: ${{ vars.FIGMA_BRIDGE_URL }}
         run: npm run build
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
