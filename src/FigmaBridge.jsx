@@ -244,7 +244,7 @@ export function FigmaImportDialog({open,onClose,onImport,initialFile=null}){
                   return <div className={'figma-section-device-v106 '+device} key={device}>
                     <strong>{device==='desktop'?'Desktop · 12 колонок':'Mobile · 4 колонки'} {device==='mobile'&&<small>{previews[i].result.mobileMode==='imported'?'из Figma':'автоматически'}</small>}</strong>
                     <div className="figma-section-mini-grid-v106" style={{gridTemplateColumns:'repeat('+cols+',minmax(0,1fr))',gridTemplateRows:'repeat('+rows+',minmax(18px,1fr))'}}>
-                      {slots.map((slot,k)=><span key={k} style={{gridColumn:slot.start+' / span '+slot.span,gridRow:slot.rowStart+' / span '+slot.rows}} title={slot.name}>{k+1}</span>)}
+                      {slots.map((slot,k)=><span key={k} style={{gridColumn:slot.start+' / span '+slot.span,gridRow:slot.rowStart+' / span '+slot.rows}} title={slot.name}>{Number.isInteger(slot.slotIndex)?slot.slotIndex+1:k+1}</span>)}
                     </div>
                   </div>;
                 })}
