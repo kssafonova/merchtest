@@ -133,13 +133,13 @@ function indexOfClosest(values,x){
   values.forEach((v,i)=>{const d=Math.abs(v-x);if(d<dist){best=i;dist=d;}});
   return best;
 }
-function buildDesktop(slots,root){
+function buildGrid(slots,root,cols=12){
   const edges=rowEdges(slots,root);
   const generated=slots.map((item,i)=>{
     const b=item.box;
-    const start=clamp(Math.round((b.x-root.x)/root.w*12)+1,1,12);
-    const right=clamp(Math.round((b.x+b.w-root.x)/root.w*12),start,12);
-    const span=clamp(right-start+1,1,13-start);
+    const start=clamp(Math.round((b.x-root.x)/root.w*cols)+1,1,cols);
+    const right=clamp(Math.round((b.x+b.w-root.x)/root.w*cols),start,cols);
+    const span=clamp(right-start+1,1,cols+1-start);
     const top=indexOfClosest(edges,b.y);
     const bottom=indexOfClosest(edges,b.y+b.h);
     return {
@@ -156,7 +156,7 @@ function buildDesktop(slots,root){
       const b=generated[j];
       const rowCollision=a.rowStart<b.rowStart+b.rows&&b.rowStart<a.rowStart+a.rows;
       const colCollision=a.start<b.start+b.span&&b.start<a.start+a.span;
-      if(rowCollision&&colCollision)throw Error('Слоты пересекаются на сетке 12 колонок. Раздвиньте их или измените границы фреймов в Figma.');
+      if(rowCollision&&colCollision)throw Error('Слоты пересекаются на сетке '+cols+' колонок. Раздвиньте их или измените границы фреймов в Figma.');
     }
   }
   return generated;
@@ -179,6 +179,29 @@ function mobileLayout(slots){
   }
   return result;
 }
+
+function mobileSlotsFromFigma(desktop,block,options){
+  const root=rect(block);
+  const detected=visualCandidates(block,options);
+  const candidates=cleanCandidates(detected.nodes,root);
+  if(candidates.length!==desktop.length)throw Error('В Mobile-макете '+candidates.length+' слотов, а в Desktop '+desktop.length+'. Число слотов должно совпадать, чтобы контент сохранялся.');
+  const layout=buildGrid(candidates,root,4);
+  const slotNumber=s=>{
+    const match=String(s||'').match(/(?:^|\s)(?:slot|слот)[\s_#-]*(\d+)(?:\b|$)/i);
+    return match?Number(match[1])-1:null;
+  };
+  const destNumbers=desktop.map(s=>slotNumber(s.figmaLayerName));
+  const mobileNumbers=layout.map(s=>slotNumber(s.figmaLayerName));
+  const named=destNumbers.every(x=>x!==null)&&mobileNumbers.every(x=>x!==null)
+    &&new Set(destNumbers).size===desktop.length&&new Set(mobileNumbers).size===desktop.length
+    &&mobileNumbers.every(n=>destNumbers.includes(n));
+  const mapped=layout.map((slot,i)=>({
+    ...slot,
+    slotIndex:named?destNumbers.indexOf(mobileNumbers[i]):i,
+  }));
+  return {slots:mapped,mapping:named?'name':'order'};
+}
+
 function container(cols,slots){
   return {
     cols,rows:Math.max(1,...slots.map(s=>s.rowStart+s.rows-1)),
@@ -192,15 +215,18 @@ export function deriveFigmaSlotTemplate(block,options={}){
   const root=rect(block);
   const detected=visualCandidates(block,options);
   const candidates=cleanCandidates(detected.nodes,root);
-  const slots=buildDesktop(candidates,root);
+  const slots=buildGrid(candidates,root,12);
+  const customMobile=options.mobileBlock?mobileSlotsFromFigma(slots,options.mobileBlock,options):null;
+  const mobileSlots=customMobile?.slots||mobileLayout(slots);
+  const title=safeName(options.name)||safeName(block.name)||'Секция из Figma';
   return {
     id:'FIGMA-TYPE-'+String(block.id||'frame').replace(/[^a-z0-9]/ig,'-')+'-'+Math.random().toString(36).slice(2,8),
-    label:safeName(block.name)||'Макет из Figma',
+    label:title,
     system:false,layoutV2:true,figmaImportedV100:true,
-    category:'Макеты из Figma',description:'Импортированная геометрия · '+slots.length+' слотов · Desktop 12 / Mobile 4',
+    category:'Секция',componentKind:'Секция',description:'Компонент «Секция» из Figma · '+slots.length+' слотов · Desktop 12 / Mobile 4',
     tags:['Figma','12→4','слоты'],containers:[container(12,slots)],
-    mobileContainers:[container(4,mobileLayout(slots))],
-    figmaMetaV100:{frameId:String(block.id||''),frameName:safeName(block.name),sourceSize:root,method:detected.source},
+    mobileContainers:[container(4,mobileSlots)],
+    figmaMetaV100:{frameId:String(block.id||''),frameName:safeName(block.name),sourceSize:root,method:detected.source,mobileMode:customMobile?'imported':'auto',mobileMapping:customMobile?.mapping||'auto'},
   };
 }
 export function makeFigmaSlotSection(block,index=0,options={}){
@@ -218,6 +244,9 @@ export function inspectFigmaSlots(block,options={}){
   const type=deriveFigmaSlotTemplate(block,options);
   return {
     count:type.containers[0].slots.length,
+    title:type.label,
+    mobileMode:type.figmaMetaV100.mobileMode,
+    mobileMapping:type.figmaMetaV100.mobileMapping,
     method:type.figmaMetaV100.method,
     desktop:type.containers[0].slots.map(x=>({name:x.figmaLayerName,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
     mobile:type.mobileContainers[0].slots.map(x=>({name:x.figmaLayerName,start:x.start,span:x.span,rowStart:x.rowStart,rows:x.rows})),
