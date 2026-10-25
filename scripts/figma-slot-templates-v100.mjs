@@ -31,4 +31,16 @@ if(!css.includes('/* figma-slot-templates-v100 */')){css+=String.raw`
 .figma-review-list-v97>label span:nth-last-child(2){white-space:normal}
 .figma-review-list-v97>label small{white-space:normal;line-height:1.45;overflow-wrap:anywhere}
 `;writeFileSync(cssPath,css);}
+if(!css.includes('/* figma-json-paste-v101 */')){css+=String.raw`
+/* figma-json-paste-v101 */
+.figma-paste-json-v101{border:1px solid #e1e7f0;border-radius:9px;margin-top:12px;background:#fff}
+.figma-paste-json-v101>summary{display:flex;align-items:center;gap:9px;padding:12px 14px;font-size:12px;font-weight:650;color:#344a65;cursor:pointer}
+.figma-paste-json-v101[open]>summary{border-bottom:1px solid #e1e7f0}
+.figma-paste-form-v101{display:grid;gap:9px;padding:14px}
+.figma-paste-form-v101 label{font-size:11px;color:#546277}
+.figma-paste-form-v101 textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:112px;max-height:280px;border:1px solid #cbd7e8;border-radius:8px;background:#fff;padding:12px;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:#27364b}
+.figma-paste-form-v101 textarea:focus{outline:2px solid #245bc3;outline-offset:1px}
+.figma-paste-form-v101 button{justify-self:start;min-height:36px;border-radius:7px;background:#fff;color:#245bc3;border:1px solid #245bc3;padding:0 12px;font-size:11px;font-weight:700;cursor:pointer}
+.figma-paste-form-v101 button:disabled{opacity:.4;cursor:default}
+`;writeFileSync(cssPath,css);}
 console.log('V100 applied: imported Figma layouts have reusable native content slots');
