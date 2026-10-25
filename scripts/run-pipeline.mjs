@@ -27,6 +27,7 @@ const pipeline = [
   'independent-panel-scroll-v94.mjs','editor-ux-polish-v95.mjs',
   'autofill-user-flow-v96.mjs',
   'figma-editor-bridge-v97.mjs','figma-visual-v98.mjs','figma-hosted-import-v99.mjs',
+  'figma-slot-templates-v100.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
