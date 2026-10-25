@@ -24,21 +24,35 @@ const extractFill = (fills, images={}) => {
   }
   return {background:col(first.color,finite(first.opacity,1,0,1))};
 };
-function bound(n){
-  const b=n?.absoluteBoundingBox || n?.absoluteRenderBounds || {};
-  return {x:finite(b.x),y:finite(b.y),w:finite(b.width,n?.size?.x||375,0,12000),h:finite(b.height,n?.size?.y||100,0,24000)};
+function bound(n,parentBox=null){
+  const absolute=n?.absoluteBoundingBox || n?.absoluteRenderBounds;
+  if(absolute) return {
+    x:finite(absolute.x),y:finite(absolute.y),
+    w:finite(absolute.width,n?.width??n?.size?.x??375,0,12000),
+    h:finite(absolute.height,n?.height??n?.size?.y??100,0,24000),
+  };
+  // Figma export utilities commonly emit local x/y/width/height, unlike
+  // the REST API's absoluteBoundingBox. Never discard these dimensions.
+  const relative=n?.box || n || {};
+  const x=finite(relative.x),y=finite(relative.y);
+  return {
+    x:finite(x+(parentBox?.x||0)),y:finite(y+(parentBox?.y||0)),
+    w:finite(relative.w??relative.width??n?.width??n?.size?.x??375,375,0,12000),
+    h:finite(relative.h??relative.height??n?.height??n?.size?.y??100,100,0,24000),
+  };
 }
-function normalizeNode(n,assets={},counter,depth=0) {
+function normalizeNode(n,assets={},counter,depth=0,parentBox=null,path='0') {
   if(!n||n.visible===false||depth>22||counter.n++>LIMIT||!TYPES.has(n.type)) return null;
-  const b=bound(n);
+  const b=bound(n,parentBox);
   const style=n.style||{};
   const fills=extractFill(n.fills,assets);
   const strokes=extractFill(n.strokes,assets);
-  const layout=n.layoutMode==='HORIZONTAL'?'row':n.layoutMode==='VERTICAL'?'column':'absolute';
+  const layout=n.layoutMode==='HORIZONTAL'?'row':n.layoutMode==='VERTICAL'?'column':n.layoutMode==='GRID'?'grid':'absolute';
   const textFill=n.type==='TEXT'?extractFill(n.fills,assets):{};
   const weight=finite(style.fontWeight,400,100,900);
   const result={
-    id:clean(n.id||'figma-'+counter.n).slice(0,120),name:clean(n.name||n.type).slice(0,160),
+    id:clean(n.id||'figma-'+path).slice(0,120),name:clean(n.name||n.type).slice(0,160),
+    sourceType:n.type,
     kind:n.type==='TEXT'?'text':n.type==='ELLIPSE'?'ellipse':CONTAINERS.has(n.type)?'container':'shape',
     box:b,layout,background:fills.background||null,image:fills.image||null,
     stroke:strokes.background||null,strokeWeight:finite(n.strokeWeight,0,0,24),
@@ -61,8 +75,8 @@ function normalizeNode(n,assets={},counter,depth=0) {
   };
   if(n.type==='TEXT') {result.background=null;result.image=null;}
   if(Array.isArray(n.children)) {
-    for(const child of n.children){
-      const converted=normalizeNode(child,assets,counter,depth+1);
+    for(const [index,child] of n.children.entries()){
+      const converted=normalizeNode(child,assets,counter,depth+1,b,path+'-'+index);
       if(converted) result.children.push(converted);
     }
   }
@@ -110,7 +124,7 @@ export function convertFigmaFile(raw, {nodeId=null,imageMap={}}={}){
   if(!originals.length)throw Error('В файле не найдены фреймы. Выберите Frame в Figma.');
   const counter={n:0};
   const assets={...(raw.images||{}),...(raw.assets||{}),...imageMap};
-  const blocks=originals.slice(0,40).map(n=>normalizeNode(n,assets,counter)).filter(Boolean);
+  const blocks=originals.slice(0,40).map((n,i)=>normalizeNode(n,assets,counter,0,null,String(i))).filter(Boolean);
   if(!blocks.length)throw Error('В выбранных фреймах нет поддерживаемых слоёв.');
   return {format:FIGMA_FORMAT,source:clean(raw.name||'Figma'),blocks,layerCount:counter.n};
 }
