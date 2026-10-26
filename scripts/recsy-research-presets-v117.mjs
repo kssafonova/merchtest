@@ -1,0 +1,5 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+const path='src/appv3.css';
+let css=readFileSync(path,'utf8');
+if(!css.includes('/* recsy-research-presets-v117 */')){css+="\n/* recsy-research-presets-v117 */\n.recsy-journeys-v117{display:grid;gap:9px;border:1px solid #dbe5f1;border-radius:9px;padding:12px;background:#f8faff}\n.recsy-journeys-v117>strong{font-size:11px;color:#344b6b;font-weight:750}\n.recsy-journeys-v117>div{display:flex;flex-wrap:wrap;gap:6px}\n.recsy-journeys-v117 button{min-height:33px;padding:7px 10px;background:#fff;border:1px solid #cedcec;border-radius:7px;color:#355b89;font-size:10px;font-weight:650;line-height:1.3;cursor:pointer}\n.recsy-journeys-v117 button:hover{background:#eef5ff;border-color:#96b5df}\n.recsy-journeys-v117 small{font-size:9.5px;color:#75879e;line-height:1.45}\n@media(max-width:580px){.recsy-journeys-v117{padding:10px}.recsy-journeys-v117 button{font-size:9.5px}}\n";writeFileSync(path,css);}
+console.log('V117 applied: synthetic research journey buttons');
