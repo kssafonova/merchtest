@@ -24,7 +24,11 @@ export function normalizedContextV115(input={}){
   const segment=['new','returning'].includes(input.segment)?input.segment:'new';
   const device=input.device==='mobile'?'mobile':'desktop';
   const content=['product','look','media'].includes(input.content)?input.content:'product';
-  return {segment,device,content,dwell:bound(input.dwell,0,90),scroll:bound(input.scroll,0,100),
+  // Derived from research scenarios, not from individual-level training.
+  const intent=['browse','search','wishlist','look'].includes(input.intent)?input.intent:'browse';
+  const pageType=['main','plp','pdp','cart'].includes(input.pageType)?input.pageType:'main';
+  return {segment,device,content,intent,pageType,viewDepth:bound(input.viewDepth,0,255),
+    dwell:bound(input.dwell,0,90),scroll:bound(input.scroll,0,100),
     click:bound(input.click,0,20),wishlist:bound(input.wishlist,0,20)};
 }
 export function safeCandidatesV115(types,ids,section,context){
@@ -59,14 +63,28 @@ export function scoreTypeV115(type,context,history={},sectionId=''){
   const content=context.content==='media'
     ?features.hero*.2
     :context.content==='look'?features.hero*.12:features.density*.13;
+  // Real cohort aggregates justify these TESTABLE DIRECTIONAL hypotheses,
+  // but cannot establish that any geometry causes more purchases.
+  const intent=context.intent==='search'
+    ?features.density*.18-features.hero*.12
+    :context.intent==='wishlist'
+      ?features.density*.12+features.complex*.05
+      :context.intent==='look'
+        ?features.hero*.18-features.density*.04
+        :features.hero*.06;
+  const page=context.pageType==='pdp'?features.density*.07-features.hero*.04
+    :context.pageType==='plp'?features.density*.05
+    :context.pageType==='main'?features.hero*.04:0;
   const key=sectionId+'|'+type.id+'|'+context.segment+'|'+context.device;
   const obs=observationsV115(history,key);
   // Beta(1,1) prior to prevent an unseen variant from always losing.
   const rate=(obs.positive+1)/(obs.shown+2);
   const empirical=(rate-.5)*.6;
-  const score=bound(.48+profile+attention+content+engagement+empirical,0,1);
+  const score=bound(.48+profile+attention+content+intent+page+engagement+empirical,0,1);
   const reason=[
     context.segment==='new'?'Первое посещение':'Повторный визит',
+    context.intent==='search'?'есть поиск':context.intent==='wishlist'?'возврат к избранному':context.intent==='look'?'изучает образы':'изучает ассортимент',
+    context.pageType==='pdp'?'карточка товара':context.pageType==='plp'?'каталог':context.pageType==='cart'?'корзина':'главная',
     quick?'быстрый скролл':isActive?'высокая вовлечённость':'нейтральное взаимодействие',
     features.overlay?'перекрывающиеся слоты':features.hero>.45?'крупные блоки':'компактная сетка',
   ];
@@ -80,7 +98,7 @@ export function chooseTypeV115({types=[],candidateIds=[],section,context={},hist
   const forced=ranked.find(x=>x.type.id===fixedTypeId);
   if(forced)return {selected:forced.type,mode:'fixed',ranked,context:ctx,reason:'Тайп зафиксирован вручную'};
   const percent=bound(exploration,0,50);
-  const bucket=[seed,section?.id,ctx.segment,ctx.device,ctx.content,ctx.dwell,ctx.scroll,ctx.click,ctx.wishlist].join('|');
+  const bucket=[seed,section?.id,ctx.segment,ctx.device,ctx.content,ctx.intent,ctx.pageType,ctx.dwell,ctx.scroll,ctx.click,ctx.wishlist].join('|');
   const shouldExplore=ranked.length>1&&(hashV115(bucket+'|mode')%10000)/100<percent;
   // Deterministic exploration for repeatable previews: a non-leading candidate.
   const selected=shouldExplore?ranked[1+hashV115(bucket+'|arm')%(ranked.length-1)]:ranked[0];
