@@ -39,4 +39,5 @@ if (process.env.npm_lifecycle_event === 'prebuild') {
   await import(new URL('./automation-dialog-runtime-smoke-v109.mjs', import.meta.url));
   await import(new URL('./figma-overlap-runtime-smoke-v112.mjs', import.meta.url));
   await import(new URL('./recsy-open-runtime-smoke-v117.mjs', import.meta.url));
+  await import(new URL('./colorway-runtime-smoke-v118.mjs', import.meta.url));
 }
