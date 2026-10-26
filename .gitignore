@@ -6,3 +6,6 @@ package-lock.json
 src/catalog.generated.js
 src/feed.generated.js
 public/products/variant-atlas.jpg
+
+# Generated synthetic colorway previews: build-time output
+public/products/variants/
