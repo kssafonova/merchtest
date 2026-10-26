@@ -112,7 +112,7 @@ export default function PersonalizationPanelV115({open,onClose,sections=[],types
           <div className="recsy-summary-top-v116"><div><span>ТЕКУЩЕЕ РЕШЕНИЕ</span><strong>{saveDecision?.selected?.label||active?.template?.label||'Секция без тайпа'}</strong><small>{saveDecision?.mode==='exploration'?'Проверяется альтернатива':saveDecision?.mode==='fixed'?'Тайп закреплён':'Лучший по демо-оценке'}</small></div>
             {saveDecision?.selected&&<MiniType type={saveDecision.selected} device={ctx.device} large/>}
           </div>
-          <div className="recsy-summary-meta-v116"><span>{candidateIds.length} вариантов</span><span>{fields[ctx.segment]}</span><span>{fields[ctx.content]}</span><span>{ctx.device==='mobile'?'Mobile':'Desktop'}</span></div>
+          <div className="recsy-summary-meta-v116"><span>{candidateIds.length} вариантов</span><span>{ctx.intent==='search'?'Целевой поиск':ctx.intent==='wishlist'?'Избранное':ctx.intent==='look'?'Образы':'Изучение'}</span><span>{fields[ctx.segment]}</span><span>{fields[ctx.content]}</span><span>{ctx.device==='mobile'?'Mobile':'Desktop'}</span></div>
         </section>
         {tab==='setup'?<>
           <section className="recsy-step-v115 recsy-step-v116">
@@ -121,8 +121,21 @@ export default function PersonalizationPanelV115({open,onClose,sections=[],types
               {sections.map(s=><option key={s.id} value={s.id}>{s.titles?.ru||s.template?.label||s.id}</option>)}
             </select></label>
           </section>
+          <section className="recsy-step-v115 recsy-step-v116 recsy-real-context-v117">
+            <div className="recsy-step-head-v115"><span>2</span><div><strong>Для какого сценария?</strong><small>Поведенческие гипотезы на основе исследований WEB/APP</small></div></div>
+            <div className="recsy-real-scenarios-v117">
+              {[
+                {key:'search',label:'Целевой поиск',sub:'Клиент знает, что ищет'},
+                {key:'browse',label:'Выбор ассортимента',sub:'Изучает товары'},
+                {key:'look',label:'Вдохновение',sub:'Заходит через образы'},
+                {key:'wishlist',label:'Возврат к выбору',sub:'Использует избранное'},
+              ].map(x=><button key={x.key} type="button" aria-pressed={ctx.intent===x.key} className={ctx.intent===x.key?'active':''} onClick={()=>changeDraft({intent:x.key})}><strong>{x.label}</strong><small>{x.sub}</small></button>)}
+            </div>
+            <label className="recsy-field-v115">Тип страницы<select value={ctx.pageType} onChange={e=>changeDraft({pageType:e.target.value})}><option value="main">Главная</option><option value="plp">Каталог (PLP)</option><option value="pdp">Карточка товара (PDP)</option><option value="cart">Корзина</option></select></label>
+            <small className="recsy-real-note-v117">Сценарии задают приоритеты для проверки, а не обученную модель. Важен A/B-тест конкретных тайпов.</small>
+          </section>
           <section className="recsy-step-v115 recsy-step-v116">
-            <div className="recsy-step-head-v115"><span>2</span><div><strong>Между какими тайпами выбираем?</strong><small>Можно использовать библиотеку и макеты Figma.</small></div></div>
+            <div className="recsy-step-head-v115"><span>3</span><div><strong>Между какими тайпами выбираем?</strong><small>Можно использовать библиотеку и макеты Figma.</small></div></div>
             <div className="recsy-row-v115"><strong>{candidateIds.length} выбрано</strong><button type="button" className="recsy-link-v116" onClick={()=>{setCandidateIds([active?.template?.id].filter(Boolean));setFixedTypeId('');}}>Оставить исходный</button></div>
             {eligible.length>6&&<input className="recsy-type-search-v115" placeholder="Найти тайп по названию" aria-label="Найти тайп" value={filter} onChange={e=>{setFilter(e.target.value);setShowAll(true);}}/>}
             <div className="recsy-type-list-v115 recsy-type-list-v116">
@@ -136,7 +149,7 @@ export default function PersonalizationPanelV115({open,onClose,sections=[],types
             {!showAll&&candidates.length>6&&<button className="recsy-more-v116" type="button" onClick={()=>setShowAll(true)}>Показать ещё {candidates.length-6} <ChevronDown size={14}/></button>}
           </section>
           <section className="recsy-step-v115 recsy-step-v116">
-            <div className="recsy-step-head-v115"><span>3</span><div><strong>Как выбирать геометрию?</strong><small>Можно сравнивать варианты или закрепить один.</small></div></div>
+            <div className="recsy-step-head-v115"><span>4</span><div><strong>Как выбирать геометрию?</strong><small>Можно сравнивать варианты или закрепить один.</small></div></div>
             <div className="recsy-mode-v116">
               <label className={!fixedTypeId?'active':''}><input type="radio" name="recsy-mode-v116" checked={!fixedTypeId} onChange={()=>setFixedTypeId('')}/><span><strong>Подбирать автоматически</strong><small>С учётом контекста посещения</small></span></label>
               <label className={fixedTypeId?'active':''}><input type="radio" name="recsy-mode-v116" checked={!!fixedTypeId} onChange={()=>setFixedTypeId(saveDecision?.selected?.id||candidateIds[0]||'')}/><span><strong>Закрепить тайп</strong><small>Одинаковая геометрия для всех</small></span></label>
@@ -154,6 +167,10 @@ export default function PersonalizationPanelV115({open,onClose,sections=[],types
         </>:<>
           <section className="recsy-step-v115 recsy-step-v116">
             <div className="recsy-step-head-v115"><span><Eye size={14}/></span><div><strong>Проверьте контекст</strong><small>Симуляция не меняет настройки до нажатия «Применить».</small></div></div>
+            <div className="recsy-two-v115">
+              <label className="recsy-field-v115">Сценарий<select value={ctx.intent} onChange={e=>changeDraft({intent:e.target.value})}><option value="browse">Изучение</option><option value="search">Поиск</option><option value="look">Образы</option><option value="wishlist">Избранное</option></select></label>
+              <label className="recsy-field-v115">Страница<select value={ctx.pageType} onChange={e=>changeDraft({pageType:e.target.value})}><option value="main">Главная</option><option value="plp">Каталог</option><option value="pdp">PDP</option><option value="cart">Корзина</option></select></label>
+            </div>
             <div className="recsy-two-v115">
               <label className="recsy-field-v115">Посетитель<select value={ctx.segment} onChange={e=>changeDraft({segment:e.target.value})}><option value="new">Новый</option><option value="returning">Вернувшийся</option></select></label>
               <label className="recsy-field-v115">Контент<select value={ctx.content} onChange={e=>changeDraft({content:e.target.value})}><option value="product">Товары</option><option value="look">Образы</option><option value="media">Медиа</option></select></label>
