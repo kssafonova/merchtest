@@ -1,3 +1,18 @@
+// Synthetic journeys derived from observed behaviour categories.
+// No internal metrics, customer data or source workbooks are embedded here.
+export const PERSONALIZATION_CONTEXT_PRESETS_V117 = Object.freeze([
+  {id:'discover',label:'Знакомство с ассортиментом',description:'Новый визит: изучение коллекций и образов',
+    context:{segment:'new',intent:'browse',pageType:'main',content:'look',dwell:12,scroll:20,click:0,wishlist:0}},
+  {id:'search',label:'Целевой поиск',description:'Пользователь ищет конкретный тип товара',
+    context:{segment:'returning',intent:'search',pageType:'plp',content:'product',dwell:18,scroll:42,click:2,wishlist:0}},
+  {id:'wishlist',label:'Возврат к избранному',description:'Сохранённый интерес и сравнение товаров',
+    context:{segment:'returning',intent:'wishlist',pageType:'main',content:'product',dwell:30,scroll:48,click:1,wishlist:2}},
+  {id:'inspiration',label:'Образы и вдохновение',description:'Изучение модных образов и редакционного контента',
+    context:{segment:'new',intent:'look',pageType:'main',content:'look',dwell:36,scroll:62,click:2,wishlist:0}},
+  {id:'pdp',label:'Подбор в карточке товара',description:'Поиск похожих товаров и дополнений на PDP',
+    context:{segment:'returning',intent:'browse',pageType:'pdp',content:'product',dwell:25,scroll:40,click:1,wishlist:1}}
+]);
+
 // Deterministic, inspectable demo policy for choosing existing storefront section types.
 // Not a trained model: no user tracking, remote calls, or implied sales lift.
 export const PERSONALIZATION_DEFAULT_V115=Object.freeze({
