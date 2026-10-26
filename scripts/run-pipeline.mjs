@@ -29,6 +29,7 @@ const pipeline = [
   'figma-editor-bridge-v97.mjs','figma-visual-v98.mjs','figma-hosted-import-v99.mjs',
   'figma-slot-templates-v100.mjs','figma-json-primary-v103.mjs',
   'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs','automation-dialog-tdz-fix-v108.mjs','figma-overlap-render-v111.mjs','automation-cjm-v113.mjs','product-ux-side-drawer-v114.mjs','recsy-layout-personalization-v115.mjs','recsy-layout-style-v115.mjs','recsy-research-presets-v117.mjs','recsy-observed-scenarios-v117.mjs',
+  'generate-variant-photos-v118.mjs','colorway-product-media-v118.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
