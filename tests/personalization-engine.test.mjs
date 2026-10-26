@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {chooseTypeV115,layoutFeaturesV115,personalizeSectionV115,recordFeedbackV115,safeCandidatesV115,slotCountV115} from '../src/personalization-engine.mjs';
+import {chooseTypeV115,layoutFeaturesV115,normalizedContextV115,scoreTypeV115,personalizeSectionV115,recordFeedbackV115,safeCandidatesV115,slotCountV115} from '../src/personalization-engine.mjs';
 
 const type=(id,slots,overlap=false)=>({id,label:id,layoutV2:true,containers:[{
   cols:12,figmaOverlayV111:overlap,slots:Array.from({length:slots},(_,i)=>({slotIndex:i,start:1+i,span:1,rowStart:1,rows:1})),
@@ -51,4 +51,33 @@ test('enabled policy changes geometry without editing original section',()=>{
   assert.equal(result.template.id,'editorial');
   assert.equal(src.template.id,'compact');
   assert.equal(result.typeId,'editorial');
+});
+
+
+test('research-informed scenarios normalize only supported intent and page types',()=>{
+  const c=normalizedContextV115({intent:'search',pageType:'pdp',viewDepth:18,device:'mobile'});
+  assert.equal(c.intent,'search');
+  assert.equal(c.pageType,'pdp');
+  assert.equal(c.viewDepth,18);
+  const invalid=normalizedContextV115({intent:'private-attribute',pageType:'unknown',viewDepth:-500});
+  assert.equal(invalid.intent,'browse');
+  assert.equal(invalid.pageType,'main');
+  assert.equal(invalid.viewDepth,0);
+});
+test('search intent prioritizes denser product geometry relative to editorial than browsing does',()=>{
+  const dense=type('density',6),editorial=type('hero',2,true);
+  editorial.containers[0].slots[0].span=10;
+  editorial.containers[0].slots[0].rows=2;
+  const base={device:'desktop',segment:'new',dwell:0,scroll:0,click:0,wishlist:0,content:'product',pageType:'plp'};
+  const browseDelta=scoreTypeV115(dense,normalizedContextV115({...base,intent:'browse'})).score-
+    scoreTypeV115(editorial,normalizedContextV115({...base,intent:'browse'})).score;
+  const searchDelta=scoreTypeV115(dense,normalizedContextV115({...base,intent:'search'})).score-
+    scoreTypeV115(editorial,normalizedContextV115({...base,intent:'search'})).score;
+  assert.ok(searchDelta>browseDelta,'search should shift a ranking toward dense product layouts');
+});
+test('observed search cohort is not implemented as a claimed purchase probability',()=>{
+  const d=chooseTypeV115({section,types:[a,b],candidateIds:['compact','editorial'],
+    context:{intent:'search',pageType:'plp'},exploration:0});
+  assert.ok(d.ranked.every(x=>x.score>=0&&x.score<=1));
+  assert.ok(d.ranked.every(x=>x.reason.includes('есть поиск')));
 });
