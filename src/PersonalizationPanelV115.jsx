@@ -1,7 +1,7 @@
 import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {X,Layers3,MousePointerClick,Image as ImageIcon,RotateCcw,CheckCircle2,ChevronDown,Eye,ShieldCheck,SlidersHorizontal,Play,Lock} from 'lucide-react';
-import {chooseTypeV115,normalizedContextV115,recordFeedbackV115,slotCountV115,safeCandidatesV115,PERSONALIZATION_DEFAULT_V115} from './personalization-engine.mjs';
+import {chooseTypeV115,normalizedContextV115,recordFeedbackV115,slotCountV115,safeCandidatesV115,PERSONALIZATION_DEFAULT_V115,PERSONALIZATION_CONTEXT_PRESETS_V117} from './personalization-engine.mjs';
 
 function MiniType({type,device='desktop',large=false}){
   const container=(device==='mobile'&&type?.mobileContainers?.length?type.mobileContainers:type?.containers)?.[0];
@@ -167,6 +167,11 @@ export default function PersonalizationPanelV115({open,onClose,sections=[],types
         </>:<>
           <section className="recsy-step-v115 recsy-step-v116">
             <div className="recsy-step-head-v115"><span><Eye size={14}/></span><div><strong>Проверьте контекст</strong><small>Симуляция не меняет настройки до нажатия «Применить».</small></div></div>
+            <div className="recsy-journeys-v117" aria-label="Демонстрационные сценарии покупателей">
+              <strong>Начать с готового сценария</strong>
+              <div>{PERSONALIZATION_CONTEXT_PRESETS_V117.map(preset=><button key={preset.id} type="button" onClick={()=>{changeDraft(preset.context);setSimulateIndex(0);}} title={preset.description}>{preset.label}</button>)}</div>
+              <small>Это демонстрационные контексты по мотивам исследований поведения, а не реальные посетители или обученная модель.</small>
+            </div>
             <div className="recsy-two-v115">
               <label className="recsy-field-v115">Сценарий<select value={ctx.intent} onChange={e=>changeDraft({intent:e.target.value})}><option value="browse">Изучение</option><option value="search">Поиск</option><option value="look">Образы</option><option value="wishlist">Избранное</option></select></label>
               <label className="recsy-field-v115">Страница<select value={ctx.pageType} onChange={e=>changeDraft({pageType:e.target.value})}><option value="main">Главная</option><option value="plp">Каталог</option><option value="pdp">PDP</option><option value="cart">Корзина</option></select></label>
