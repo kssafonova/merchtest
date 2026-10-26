@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {chooseTypeV115,layoutFeaturesV115,normalizedContextV115,scoreTypeV115,personalizeSectionV115,recordFeedbackV115,safeCandidatesV115,slotCountV115} from '../src/personalization-engine.mjs';
+import {chooseTypeV115,layoutFeaturesV115,normalizedContextV115,scoreTypeV115,personalizeSectionV115,recordFeedbackV115,safeCandidatesV115,slotCountV115,PERSONALIZATION_CONTEXT_PRESETS_V117} from '../src/personalization-engine.mjs';
 
 const type=(id,slots,overlap=false)=>({id,label:id,layoutV2:true,containers:[{
   cols:12,figmaOverlayV111:overlap,slots:Array.from({length:slots},(_,i)=>({slotIndex:i,start:1+i,span:1,rowStart:1,rows:1})),
@@ -80,4 +80,21 @@ test('observed search cohort is not implemented as a claimed purchase probabilit
     context:{intent:'search',pageType:'plp'},exploration:0});
   assert.ok(d.ranked.every(x=>x.score>=0&&x.score<=1));
   assert.ok(d.ranked.every(x=>x.reason.includes('есть поиск')));
+});
+
+test('every synthetic research journey produces a valid, deterministic demo recommendation',()=>{
+  const names=new Set();
+  for(const preset of PERSONALIZATION_CONTEXT_PRESETS_V117){
+    assert.ok(preset.id&&preset.label);
+    assert.ok(!names.has(preset.id));
+    names.add(preset.id);
+    const args={section,types:[a,b,c],candidateIds:['compact','editorial','narrow'],context:preset.context,exploration:0};
+    const output=chooseTypeV115(args);
+    assert.ok(output.selected?.id);
+    assert.equal(output.mode,'exploitation');
+    assert.equal(chooseTypeV115(args).selected.id,output.selected.id);
+    assert.ok(['browse','search','wishlist','look'].includes(output.context.intent));
+    assert.ok(['main','plp','pdp','cart'].includes(output.context.pageType));
+  }
+  assert.equal(names.size,5);
 });
