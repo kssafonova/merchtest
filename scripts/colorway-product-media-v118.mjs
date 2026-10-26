@@ -8,10 +8,10 @@ if(!app.includes(MARK)){
   app="import {colorVariantImagePathV118} from './color-variant-spec-v118.mjs';\n"+app;
   // Original SKU images remain exactly as supplied. Remove generic group photos
   // and the tiny atlas from the colorway gallery: they are not actual SKU photos.
-  const base='const baseMedia = [\n      ...((base.images && base.images.length) ? base.images : (base.image ? [base.image] : [])),\n      ...(eligible ? variantAtlasShots(base.id, 1) : []),\n      ...productModelShots(base),\n    ];';
-  const baseNew='const baseMedia = [\n      ...((base.images && base.images.length) ? base.images : (base.image ? [base.image] : [])),\n    ];';
+  const base='const baseMedia = [\n      ...productPackshotsV83(base),\n      ...productModelShots(base),\n    ];';
+  const baseNew='const baseMedia = [\n      ...productPackshotsV83(base),\n    ];';
   replaceOne(base,baseNew,'base image fallback');
-  replaceOne('mediaItems: [...variantAtlasShots(base.id, row.variantIndex), ...productModelShots(base)],',
+  replaceOne('mediaItems: [...productPackshotsV83(base), ...productModelShots(base)],',
     'syntheticColorPreviewV118:true,\n        mediaItems: [PRODUCT_VARIANT_BASE_URL + colorVariantImagePathV118(base.id,row.variantIndex)],',
     'variant media routing');
   // All product cards, storefront slots, PIM gallery, recommendations,
