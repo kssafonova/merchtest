@@ -30,6 +30,7 @@ const pipeline = [
   'figma-slot-templates-v100.mjs','figma-json-primary-v103.mjs',
   'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs','automation-dialog-tdz-fix-v108.mjs','figma-overlap-render-v111.mjs','automation-cjm-v113.mjs','product-ux-side-drawer-v114.mjs',
   'generate-variant-photos-v118.mjs','colorway-product-media-v118.mjs',
+  'page-analytics-integration-v120.mjs','page-analytics-style-v120.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
@@ -51,4 +52,5 @@ if (process.env.npm_lifecycle_event === 'prebuild') {
   await import(new URL('./automation-dialog-runtime-smoke-v109.mjs', import.meta.url));
   await import(new URL('./figma-overlap-runtime-smoke-v112.mjs', import.meta.url));
   await import(new URL('./colorway-runtime-smoke-v118.mjs', import.meta.url));
+  await import(new URL('./page-analytics-runtime-smoke-v120.mjs', import.meta.url));
 }
