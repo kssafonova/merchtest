@@ -21,7 +21,7 @@ if(!app.includes(MARK)){
  let n=0;
  app=app.replace(/<SectionCanvas\b[\s\S]*?\/>/g,tag=>{
   n++;let next=tag;
-  if(!next.includes('analyticsModeV120='))next=next.slice(0,-2)+" analyticsModeV120={analyticsModeV120}\n analyticsRecordV120={analyticsReportV120.records.find(r=>r.id===section.id)}\n onAnalyticsPickV120={(sectionId,slotIndex)=>{setSelectedId(sectionId);setAnalyticsSelectedSlotV120(slotIndex==null?null:{sectionId,slotIndex});}}"'/>';
+  if(!next.includes('analyticsModeV120='))next=next.slice(0,-2)+" analyticsModeV120={analyticsModeV120}\n analyticsRecordV120={analyticsReportV120.records.find(r=>r.id===section.id)}\n onAnalyticsPickV120={(sectionId,slotIndex)=>{setSelectedId(sectionId);setAnalyticsSelectedSlotV120(slotIndex==null?null:{sectionId,slotIndex});}}" + '/>';
   next=next.replace('editable={!previewMode}','editable={!previewMode && !analyticsModeV120}');
   next=next.replace('onPin={pinEntity}','onPin={analyticsModeV120?()=>{}:pinEntity}');
   next=next.replace('onUnpin={unpin}','onUnpin={analyticsModeV120?()=>{}:unpin}');
