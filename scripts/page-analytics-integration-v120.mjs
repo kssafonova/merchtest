@@ -37,7 +37,7 @@ if(!app.includes(MARK)){
  const container='<div className="section-containers"';
  if(!chunk.includes(container))throw Error(MARK+': SectionCanvas container missing');
  chunk=chunk.replace(container,'{analyticsModeV120&&<AnalyticsSectionStripV120 record={analyticsRecordV120} onSelect={onAnalyticsPickV120}/>}<div className="section-containers"');
- const slot=/<Slot slot=\{slot\}[^>]*\/>/;
+ const slot=/<Slot\b[\s\S]*?\/>/;
  if(!slot.test(chunk))throw Error(MARK+': Slot visual not found');
  chunk=chunk.replace(slot,m=>m+'{analyticsModeV120&&<AnalyticsSlotBadgeV120 record={analyticsRecordV120} slotIndex={slot.index} onSelect={onAnalyticsPickV120}/>}');
  app=app.slice(0,start)+chunk+app.slice(end);
