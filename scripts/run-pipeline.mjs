@@ -28,16 +28,27 @@ const pipeline = [
   'autofill-user-flow-v96.mjs',
   'figma-editor-bridge-v97.mjs','figma-visual-v98.mjs','figma-hosted-import-v99.mjs',
   'figma-slot-templates-v100.mjs','figma-json-primary-v103.mjs',
-  'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs','automation-dialog-tdz-fix-v108.mjs','figma-overlap-render-v111.mjs','automation-cjm-v113.mjs','product-ux-side-drawer-v114.mjs','recsy-layout-personalization-v115.mjs','recsy-layout-style-v115.mjs','recsy-research-presets-v117.mjs','recsy-observed-scenarios-v117.mjs',
+  'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs','automation-dialog-tdz-fix-v108.mjs','figma-overlap-render-v111.mjs','automation-cjm-v113.mjs','product-ux-side-drawer-v114.mjs',
   'generate-variant-photos-v118.mjs','colorway-product-media-v118.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
 }
+// Personalization is temporarily disabled in the active editor (V119).
+// Preserve the old implementation files for a deliberate future re-enable,
+// but fail any build that accidentally restores the button or runtime logic.
+const {readFileSync} = await import('node:fs');
+const activeAppV119 = readFileSync('src/AppV3.jsx','utf8');
+const activeCssV119 = readFileSync('src/appv3.css','utf8');
+for (const needle of ['RECSYS_LAYOUT_V115','PersonalizationPanelV115','personalizeSectionV115','editor-personalize-v115']) {
+  if (activeAppV119.includes(needle)||activeCssV119.includes(needle)) {
+    throw new Error('PERSONALIZATION_DISABLED_V119: personalization unexpectedly active: '+needle);
+  }
+}
+console.log('V119: personalization removed from active UI and storefront runtime');
 if (process.env.npm_lifecycle_event === 'prebuild') {
   await import(new URL('./runtime-smoke-v75.mjs', import.meta.url));
   await import(new URL('./automation-dialog-runtime-smoke-v109.mjs', import.meta.url));
   await import(new URL('./figma-overlap-runtime-smoke-v112.mjs', import.meta.url));
-  await import(new URL('./recsy-open-runtime-smoke-v117.mjs', import.meta.url));
   await import(new URL('./colorway-runtime-smoke-v118.mjs', import.meta.url));
 }
