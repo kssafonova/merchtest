@@ -53,6 +53,14 @@ if(!app.includes('const '+marker+' = true;')){
     "if (next) { remember(next,'auto'); slots.push({index,status:'auto',entity:next,origin:'automation',warning:isComingSoonV125(next,region)?'Скоро в продаже':null,lifecycleV125:isComingSoonV125(next,region)?'coming_soon':null}); continue; }",
     'auto coming soon status');
   app=app.slice(0,start)+resolver+app.slice(end);
+  // A Coming Soon label must remain visible in actual storefront preview, where editor warnings are hidden.
+  const cardStart=app.indexOf('function ProductCard('),cardEnd=app.indexOf('\nfunction ',cardStart+20);
+  if(cardStart<0||cardEnd<0)throw new Error(marker+': ProductCard missing');
+  let productCard=app.slice(cardStart,cardEnd);
+  productCard=replaceOnce(productCard,'<div className="merch-card-media">',
+    '<div className="merch-card-media">{isComingSoonV125(product,region)&&<span className="merch-coming-soon-badge-v125">Скоро в продаже</span>}',
+    'storefront coming soon badge');
+  app=app.slice(0,cardStart)+productCard+app.slice(cardEnd);
   const canvasStart=app.indexOf('function SectionCanvas('),canvasEnd=app.indexOf('\nfunction ',canvasStart+20);
   if(canvasStart<0||canvasEnd<0)throw new Error(marker+': SectionCanvas missing');
   let canvas=app.slice(canvasStart,canvasEnd);
