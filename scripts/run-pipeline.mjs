@@ -31,6 +31,7 @@ const pipeline = [
   'automation-apply-fix-v104.mjs','content-browser-focus-v105.mjs','figma-mobile-and-automation-ux-v106.mjs','automation-repeat-cleanup-v107.mjs','automation-dialog-tdz-fix-v108.mjs','figma-overlap-render-v111.mjs','automation-cjm-v113.mjs','product-ux-side-drawer-v114.mjs',
   'generate-variant-photos-v118.mjs','colorway-product-media-v118.mjs',
   'page-analytics-integration-v120.mjs','page-analytics-style-v120.mjs',
+  'section-inline-and-analytics-v121.mjs','section-analytics-design-v121.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
