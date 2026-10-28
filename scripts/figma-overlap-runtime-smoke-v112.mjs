@@ -28,6 +28,9 @@ try{
       onSelect(){},onPin(){},onUnpin(){},onDuplicate(){},onDelete(){},onSectionDragStart(){},onSectionDrop(){}
     }));
     if(!html.includes('Наложение'))throw Error('Canvas lost title on '+device);
+    for(const control of ['inline-section-appearance-v121','Оформление','Сверху','Снизу','Скрыть элементы']){
+      if(!html.includes(control))throw Error('V121 inline section control missing ('+device+'): '+control);
+    }
     if(device==='desktop'){
       if(!html.includes('figma-overlay-grid-v111'))throw Error('Desktop overlap canvas missing');
       if(!html.includes('--figma-x-v111'))throw Error('Desktop absolute slot geometry missing');
@@ -35,7 +38,21 @@ try{
     }else if(html.includes('figma-overlay-grid-v111'))
       throw Error('Automatic mobile layout should not be forced into overlap');
   }
-  console.log('V112 runtime smoke passed: desktop overlapped slots and responsive mobile section render');
+  // V121: no accidental reset of existing section style values after introducing split padding.
+  const styled={...section,styleV57:{background:'#F4E7D5',textColor:'#17253A',padding:24,paddingTop:72,paddingBottom:8,hideElements:true}};
+  const styledHtml=renderToString(React.createElement(mod.__FigmaOverlapCanvasV112,{
+    section:styled,locale:'ru',region:'RU',device:'desktop',selected:true,editable:true,
+    onSelect(){},onPin(){},onUnpin(){},onDuplicate(){},onDelete(){},onSectionDragStart(){},onSectionDrop(){}
+  }));
+  for(const expected of ['data-hide-elements-v121="true"','padding-top:72px','padding-bottom:8px','#F4E7D5','#17253A']){
+    if(!styledHtml.includes(expected))throw Error('V121 live section style not reflected in render: '+expected);
+  }
+  const previewHtml=renderToString(React.createElement(mod.__FigmaOverlapCanvasV112,{
+    section:styled,locale:'ru',region:'RU',device:'desktop',selected:true,editable:false,
+    onSelect(){},onPin(){},onUnpin(){},onDuplicate(){},onDelete(){},onSectionDragStart(){},onSectionDrop(){}
+  }));
+  if(previewHtml.includes('inline-section-appearance-v121'))throw Error('V121 style controls leaked into preview');
+  console.log('V112/V121 runtime smoke passed: Figma overlaps, inline appearance, split padding, visibility and preview isolation');
 }catch(error){
   console.error('V112 FIGMA OVERLAP RENDER FAILED');
   console.error(error?.stack||error);
