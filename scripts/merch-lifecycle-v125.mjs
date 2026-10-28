@@ -20,7 +20,7 @@ if(!app.includes('const '+marker+' = true;')){
   let resolver=app.slice(start,end);
   resolver=replaceOnce(resolver,
     "const availableRaw = rawCandidates.filter((product)=>Number(automationProductValueV63(product,'stock',region))>0);",
-    "const availableRaw = rawCandidates.filter((product)=>Number(automationProductValueV63(product,'stock',region))>0||(teaserEnabledV125&&isComingSoonV125(product,region)));",
+    "const lifecyclePolicyV125=section?.merchPolicyV125||{objective:'sales',includeComingSoon:false};\n  const teaserEnabledV125=lifecyclePolicyV125.objective==='teaser'&&lifecyclePolicyV125.includeComingSoon===true;\n  const availableRaw = rawCandidates.filter((product)=>Number(automationProductValueV63(product,'stock',region))>0||(teaserEnabledV125&&isComingSoonV125(product,region)));",
     'allow only explicit teasers');
   // Keep the saved ranking order. Coming Soon must not silently jump ahead of configured sort.
   resolver=replaceOnce(resolver,
