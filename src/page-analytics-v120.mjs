@@ -38,8 +38,8 @@ export function actualSectionV120(section,region='RU'){
   }
   const cachedReserve=Array.isArray(section?.reserveV63)?section.reserveV63.length:null;
   const status=section?.automationRuleV63?.status||section?.rules?.status||null;
-  const reserve=cachedReserve??(Number.isFinite(Number(status?.reserveCount))?Math.max(0,Number(status.reserveCount)):null);
-  const knownConflict=Number.isFinite(Number(status?.skuConflicts))?Math.max(0,Number(status.skuConflicts)):null;
+  const reserve=cachedReserve??(status?.reserveCount!=null&&Number.isFinite(Number(status.reserveCount))?Math.max(0,Number(status.reserveCount)):null);
+  const knownConflict=status?.skuConflicts!=null&&Number.isFinite(Number(status.skuConflicts))?Math.max(0,Number(status.skuConflicts)):null;
   return {capacity:slots.length,filled:filled.length,empty:slots.length-filled.length,productSlots:products.length,pinned,automated,
     reserve,skuConflicts:knownConflict,
     oos:oos.length,knownStock:products.filter(item=>normalizeStock(item,region)!=null).length,
