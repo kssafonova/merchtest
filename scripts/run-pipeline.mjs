@@ -32,6 +32,7 @@ const pipeline = [
   'generate-variant-photos-v118.mjs','colorway-product-media-v118.mjs',
   'page-analytics-integration-v120.mjs','page-analytics-style-v120.mjs',
   'section-inline-and-analytics-v121.mjs','section-analytics-design-v121.mjs',
+  'section-style-and-status-fix-v122.mjs','section-style-analytics-css-v122.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));
