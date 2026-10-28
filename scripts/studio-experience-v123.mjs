@@ -19,7 +19,7 @@ if(!app.includes(MARK)){
             aria-pressed={analyticsModeV120} onClick={()=>{setAnalyticsModeV120(true);setPreviewMode(false);setAemAuthorModeV40('edit');setShowCoverage(false);}}><BarChart3 size={15}/><span>Аналитика</span></button>
         </div>`;
  app=app.replace(buttons,modes);
- const frame=/<div className=\\{`storefront-frame \\$\\{device\\}`\\}/;
+ const frame=/<div className=\{`storefront-frame \$\{device\}`\}/;
  if(!frame.test(app))throw Error(MARK+': storefront frame not found');
  app=app.replace(frame,match=>`{!previewMode&&!analyticsModeV120&&<div className="studio-workspace-context-v123"><div><span className="studio-workspace-kicker-v123">РЕДАКТИРОВАНИЕ СТРАНИЦЫ</span><strong>{currentPageName}</strong><small>{region} · {device==='mobile'?'Мобильная версия':device==='tablet'?'Планшет':'Компьютер'}</small></div><span className="studio-workspace-guidance-v123">Выберите секцию для настройки или перетащите контент в слот</span></div>}`+match);
  writeFileSync(path,app);
