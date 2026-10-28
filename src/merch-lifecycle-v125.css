@@ -40,7 +40,7 @@
 .lego-app .lego-slot.filled .merch-product-card .merch-card-media>.merch-coming-soon-badge-v125,
 .lego-app .merch-product-card .merch-card-media>.merch-coming-soon-badge-v125{
   position:absolute!important;top:10px!important;left:10px!important;right:auto!important;bottom:auto!important;
-  display:inline-flex!important;align-items:center;min-height:24px;z-index:25!important;
+  display:inline-flex!important;align-items:center;width:max-content!important;height:auto!important;min-height:24px;z-index:25!important;
   padding:4px 8px;border:1px solid rgba(55,65,57,.16);border-radius:3px;
   background:rgba(247,248,242,.94)!important;color:#354536!important;
   font:700 9px/1.2 Inter,ui-sans-serif,system-ui,sans-serif!important;letter-spacing:.035em!important;
