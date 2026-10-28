@@ -27,8 +27,8 @@ try{
       section,locale:'ru',region:'RU',device,selected:true,editable:true,
       onSelect(){},onPin(){},onUnpin(){},onDuplicate(){},onDelete(){},onSectionDragStart(){},onSectionDrop(){}
     }));
-    if(!html.includes('Наложение'))throw Error('Canvas lost title on '+device);
-    for(const control of ['inline-section-appearance-v121','Оформление','Сверху','Снизу','Скрыть элементы']){
+    if(html.includes('<h3>Наложение</h3>')||html.includes('section-header-line'))throw Error('Section name leaked into '+device+' canvas');
+    for(const control of ['inline-section-appearance-v121','Оформление','Сверху','Снизу','Служебные элементы']){
       if(!html.includes(control))throw Error('V121 inline section control missing ('+device+'): '+control);
     }
     if(device==='desktop'){
@@ -44,7 +44,7 @@ try{
     section:styled,locale:'ru',region:'RU',device:'desktop',selected:true,editable:true,
     onSelect(){},onPin(){},onUnpin(){},onDuplicate(){},onDelete(){},onSectionDragStart(){},onSectionDrop(){}
   }));
-  for(const expected of ['data-hide-elements-v121="true"','padding-top:72px','padding-bottom:8px','#F4E7D5','#17253A']){
+  for(const expected of ['data-hide-elements-v121="true"','padding-top:72px','padding-bottom:8px','#F4E7D5','#17253A','--merch-section-bg-v122','--merch-section-ink-v122']){
     if(!styledHtml.includes(expected))throw Error('V121 live section style not reflected in render: '+expected);
   }
   const previewHtml=renderToString(React.createElement(mod.__FigmaOverlapCanvasV112,{
