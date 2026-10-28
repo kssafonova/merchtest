@@ -46,3 +46,12 @@
   font:700 9px/1.2 Inter,ui-sans-serif,system-ui,sans-serif!important;letter-spacing:.035em!important;
   text-transform:uppercase;box-shadow:0 1px 4px rgba(0,0,0,.06);pointer-events:none
 }
+
+
+/* V126: non-blocking guidance in authoring; blocking issues in automation save. */
+.merch-rule-diagnostics-v126,.merch-auto-issues-v126{display:grid;gap:6px;min-width:0}
+.merch-rule-diagnostics-v126 p,.merch-auto-issues-v126 p{display:flex;align-items:flex-start;gap:8px;min-width:0;margin:0;padding:9px 11px;border:1px solid #ead7b6;background:#fff9ec;color:#795f2d;border-radius:7px;font-size:10.5px;line-height:1.45}
+.merch-rule-diagnostics-v126 p.error,.merch-auto-issues-v126 p.error{background:#fff0ec;border-color:#ebc5ba;color:#a04734}
+.merch-rule-diagnostics-v126 svg,.merch-auto-issues-v126 svg{flex:0 0 auto;margin-top:1px}
+.merch-auto-issues-v126{margin:9px 0 3px}
+.merch-auto-issues-v126 p{font-size:11px}
