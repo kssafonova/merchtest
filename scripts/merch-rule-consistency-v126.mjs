@@ -49,9 +49,9 @@ if(!app.includes('const '+marker+' = true;')){
 }`;
   app=app.slice(0,preview.a)+previewValue+app.slice(preview.b);
 
-  app=one(app,"  {key:'new',label:'Новинки',hint:'Новые товары сначала'},",
-    "  {key:'new',label:'Новинки',hint:'Новые товары сначала'},\n  {key:'coming_soon',label:'Coming Soon',hint:'Только товары с явным статусом «Скоро в продаже»'},",
-    'announcement scenario');
+  const scenarioLine=app.match(/^  \\{key:'new',label:'Новинки',hint:'[^']*'\\},$/m)?.[0];
+  if(!scenarioLine)throw Error(marker+': new scenario anchor missing');
+  app=one(app,scenarioLine,scenarioLine+"\\n  {key:'coming_soon',label:'Coming Soon',hint:'Только товары с явным статусом «Скоро в продаже»'},",'announcement scenario');
   app=one(app,
     "  if(scenario==='new') return [{type:'condition',id:'scenario-new-v77',field:'isNew',operator:'eq',value:'true'}];",
     "  if(scenario==='new') return [{type:'condition',id:'scenario-new-v77',field:'isNew',operator:'eq',value:'true'}];\n  if(scenario==='coming_soon') return [{type:'condition',id:'scenario-coming-v126',field:'commercialState',operator:'eq',value:'coming_soon'}];",
