@@ -95,18 +95,41 @@ export default function PageAnalyticsPanelV120({report,pageName,period,onPeriod,
     </div>
   </aside>;
 }
-export function AnalyticsSectionStripV120({record,onSelect}){
+export function AnalyticsSectionStripV120({record,onSelect,mode='actual'}){
   if(!record)return null;
-  return <div className="merch-analytics-section-strip-v120" onClick={e=>e.stopPropagation()}>
-    <div><span>{String(record.position).padStart(2,'0')} · {record.name}</span><strong>{record.actual.filled}/{record.actual.capacity} слотов</strong></div>
-    <div><span>Видели: {fmt(record.behavior.exposures)}</span><span>CTR: {pct(record.behavior.ctr)}</span><span>Корзина: {fmt(record.behavior.carts)}</span></div>
-    <button type="button" onClick={()=>onSelect(record.id,null)} aria-label={'Детали секции '+record.name}><BarChart3 size={14}/></button>
+  const hasBehavior=record.behavior.exposures!=null;
+  const values=[
+    {label:'Видимые показы',value:fmt(record.behavior.exposures),key:'views'},
+    {label:'CTR',value:pct(record.behavior.ctr),key:'ctr'},
+    {label:'В корзину',value:fmt(record.behavior.carts),key:'cart'},
+    {label:'Нет в наличии',value:fmt(record.actual.oos),key:'oos',real:true},
+  ];
+  return <div className="merch-analytics-section-strip-v120 merch-analytics-section-report-v121" onClick={event=>event.stopPropagation()}>
+    <div className="merch-section-report-heading-v121">
+      <span className="merch-section-report-index-v121">{String(record.position).padStart(2,'0')}</span>
+      <div className="merch-section-report-identity-v121"><strong>{record.name}</strong><small>{record.typeId||'Секция'} · {record.actual.filled} из {record.actual.capacity} слотов</small></div>
+      <span className={'merch-section-report-source-v121 '+(mode==='demo'?'demo':'actual')}>{mode==='demo'?'СИМУЛЯЦИЯ':'СОСТОЯНИЕ ВИТРИНЫ'}</span>
+      <button type="button" className="merch-section-report-open-v121" onClick={()=>onSelect(record.id,null)} aria-label={'Открыть аналитику секции '+record.name}><BarChart3 size={15}/><span>Подробнее</span><ChevronRight size={13}/></button>
+    </div>
+    <div className="merch-section-report-metrics-v121">
+      {values.map(item=><div key={item.key} className={'merch-section-report-metric-v121'+(item.real?' fact':'')}>
+        <small>{item.label}{item.real&&<span>ФАКТ</span>}</small><strong>{item.value}</strong>
+      </div>)}
+    </div>
+    {!hasBehavior&&<small className="merch-section-report-empty-v121">Поведенческие события не подключены · доступно состояние текущей секции</small>}
   </div>;
 }
-export function AnalyticsSlotBadgeV120({record,slotIndex,onSelect}){
-  const item=record?.slots?.find(s=>s.index===slotIndex);
+export function AnalyticsSlotBadgeV120({record,slotIndex,onSelect,mode='actual'}){
+  const item=record?.slots?.find(slot=>slot.index===slotIndex);
   if(!item)return null;
-  return <button type="button" className="merch-analytics-slot-badge-v120" onClick={e=>{e.stopPropagation();e.preventDefault();onSelect(record.id,slotIndex);}} aria-label={'Аналитика слота '+(slotIndex+1)}>
-    <BarChart3 size={11}/><span>{item.behavior.ctr==null?'—':pct(item.behavior.ctr)}</span>
+  const noData=item.behavior.ctr==null;
+  const stockEmpty=item.stock===0;
+  return <button type="button" className={'merch-analytics-slot-badge-v120 merch-slot-insight-v121'+(stockEmpty?' stock-alert':'')}
+    onClick={event=>{event.stopPropagation();event.preventDefault();onSelect(record.id,slotIndex);}}
+    aria-label={'Аналитика слота '+(slotIndex+1)+' · '+(noData?'нет событий':'CTR '+pct(item.behavior.ctr))}>
+    <span className="merch-slot-insight-index-v121">{String(slotIndex+1).padStart(2,'0')}</span>
+    <span className="merch-slot-insight-value-v121">{noData?'Нет событий':'CTR '+pct(item.behavior.ctr)}</span>
+    {stockEmpty&&<span className="merch-slot-insight-stock-v121">OOS</span>}
+    <ChevronRight size={12}/>
   </button>;
 }
