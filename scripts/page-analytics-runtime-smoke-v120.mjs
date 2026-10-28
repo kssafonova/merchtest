@@ -20,10 +20,11 @@ const server=await createServer({
 try{
  const app=await server.ssrLoadModule('/src/AppV3.jsx');
  const html=renderToString(React.createElement(app.default));
- for(const needle of ['merch-analytics-inspector-v120','merch-analytics-section-strip-v120','merch-analytics-slot-badge-v120','Качество наполнения','Демо-метрики','ДАННЫЕ ВИТРИНЫ']){
+ for(const needle of ['merch-analytics-inspector-v120','merch-analytics-section-strip-v120','merch-analytics-slot-badge-v120','merch-analytics-section-report-v121','merch-slot-insight-v121','СОСТОЯНИЕ ВИТРИНЫ','Качество наполнения','Демо-метрики','ДАННЫЕ ВИТРИНЫ']){
    if(!html.includes(needle))throw Error('Missing analytical UI in live page: '+needle);
  }
  if(html.includes('Симулированные события, не измерения магазина'))throw Error('Simulation unexpectedly enabled by default');
+ if(html.includes('inline-section-appearance-v121'))throw Error('Authoring style controls leaked into analytics mode');
  console.log('V120 runtime smoke passed: real editor renders analytics inspector, section strips and slot controls ('+html.length+' chars)');
 }catch(error){
  console.error('V120 ANALYTICS MODE FAILED');
