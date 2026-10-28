@@ -37,7 +37,7 @@ export function requestsComingSoonV126(rule){
 export function merchRuleIssuesV126(section,region='RU',overrideRule=null){
   const policy=merchPolicyV125(section);
   const rule=overrideRule||section?.automationRuleV63||section?.groupRuleV63||section?.rules;
-  if(!rule||rule?.selection?.enabled===false)return [];
+  if(!rule)return [];
   const issues=[];
   const allowed=policy.objective==='teaser'&&policy.includeComingSoon;
   if(requestsComingSoonV126(rule)&&!allowed){
