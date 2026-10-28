@@ -54,7 +54,14 @@ export function merchRuleIssuesV126(section,region='RU',overrideRule=null){
   }
   return issues;
 }
-export function merchScopeIssuesV126(sections,rule,region='RU'){
-  return (sections||[]).flatMap(section=>merchRuleIssuesV126(section,region,rule)
+export function merchScopeIssuesV126(sections,rule,region='RU',matchedCandidates=null){
+  const members=(sections||[]).filter(Boolean);
+  const issues=members.flatMap(section=>merchRuleIssuesV126(section,region,rule)
     .map(issue=>({...issue,sectionId:section.id,sectionName:section.titles?.ru||section.id||'Секция'})));
+  const teaserPermissions=new Set(members.map(isTeaserAllowedV125));
+  if(teaserPermissions.size>1 && (matchedCandidates||[]).some(product=>isComingSoonV125(product,region))){
+    issues.push({code:'mixed_commercial_scope',severity:'error',sectionId:members[0].id,sectionName:'Группа секций',
+      message:'Один авто-пул содержит Coming Soon, но секции группы по-разному разрешают анонсы. Разделите правила или согласуйте коммерческие цели.'});
+  }
+  return issues;
 }
