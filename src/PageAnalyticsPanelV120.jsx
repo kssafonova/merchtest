@@ -41,10 +41,10 @@ function SectionInspector({record,slotIndex,onSlotSelect,mode}){
         <div title="Товары-кандидаты, не попавшие в свободные слоты"><small>Резерв</small><strong>{fmt(record.actual.reserve)}</strong></div>
         <div title="Повторы SKU, отмеченные механизмом автоматизации"><small>Конфликты SKU</small><strong>{fmt(record.actual.skuConflicts)}</strong></div>
         <div title="Одинаковые артикулы среди заполненных слотов секции"><small>Повторения</small><strong>{record.actual.duplicates}</strong></div>
-        <div title="Число товаров с нулевым остатком"><small>Нет в наличии</small><strong>{record.actual.oos}</strong></div>
+        <div title="Нулевой остаток в продающем размещении, кроме корректного Coming Soon"><small>Нежелательный OOS</small><strong>{record.actual.commercialOos}</strong></div>
       </div>
-      <p>Резерв — товары вне заполненных слотов. Конфликты — повторы, обнаруженные автоматизацией. Прочерк означает, что статус не рассчитан.</p>
-      {slot&&<div className="merch-section-inventory-slot-v122"><span>Слот {slot.index+1}</span><strong>{slot.pinned?'Закреплён вручную':slot.status==='auto'?'Заполнен правилом':slot.entity?'Заполнен вручную':'Пустой'}</strong><small>{slot.stock==null?'Остаток неизвестен':'Остаток: '+slot.stock+' шт.'}</small></div>}
+      <p>Coming Soon в анонсе: <strong>{record.actual.comingSoon}</strong> · Нулевой остаток всего: <strong>{record.actual.oos}</strong>. Резерв — товары вне заполненных слотов, конфликты — повторы по правилам. Прочерк означает отсутствие данных.</p>
+      {slot&&<div className="merch-section-inventory-slot-v122"><span>Слот {slot.index+1}</span><strong>{slot.pinned?'Закреплён вручную':slot.status==='auto'?'Заполнен правилом':slot.entity?'Заполнен вручную':'Пустой'}</strong><small>{slot.commercialState==='coming_soon'?'Скоро в продаже · покупка пока недоступна':slot.stock==null?'Остаток неизвестен':'Остаток: '+slot.stock+' шт.'}</small></div>}
     </div>
     {behavior.orders!=null&&<div className="merch-analytics-facts-v120">
       <div><span>Заказы после клика*</span><b>{fmt(behavior.orders)}</b></div>
@@ -78,8 +78,16 @@ export default function PageAnalyticsPanelV120({report,pageName,period,onPeriod,
         <Indicator label="В корзину" value={fmt(report.behavior.carts)}/>
         <Indicator label="Заказы*" value={fmt(report.behavior.orders)}/>
         <Indicator label="Выручка*" value={money(report.behavior.revenue)}/>
-        <Indicator label="Нулевой остаток" value={fmt(report.totals.oos)} hint="Фактическое состояние размещённых SKU"/>
+        <Indicator label="Нежелательный OOS" value={fmt(report.totals.commercialOos)} hint="Нулевые остатки в продающих размещениях; согласованный Coming Soon исключён"/>
       </div>
+      <h3 className="merch-analytics-group-title-v120">Коммерческая пригодность витрины <span>ФАКТ</span></h3>
+      <div className="merch-analytics-commerce-v125">
+        <div><small>Доступны к покупке</small><strong>{fmt(report.totals.availableNow)}</strong><span>Текущие размещения</span></div>
+        <div><small>Coming Soon</small><strong>{fmt(report.totals.comingSoon)}</strong><span>Осознанные анонсы</span></div>
+        <div><small>Нежелательный OOS</small><strong>{fmt(report.totals.commercialOos)}</strong><span>Требуют проверки</span></div>
+        <div><small>Sell-Through Rate</small><strong>—</strong><span>Нужны продажи и запасы за период</span></div>
+      </div>
+      <p className="merch-analytics-commerce-note-v125">Нулевые остатки всего: {fmt(report.totals.oos)}. Coming Soon не считается ошибкой только в секциях анонса с разрешённым показом. STR, потери продаж и прирост выручки не вычисляются по составу слотов.</p>
       <h3 className="merch-analytics-group-title-v120">Качество наполнения <span>ФАКТ</span></h3>
       <div className="merch-analytics-quality-v120">
         <div><strong>{report.totals.filled}/{report.totals.slots}</strong><span>Слотов заполнено</span></div>
@@ -98,7 +106,7 @@ export default function PageAnalyticsPanelV120({report,pageName,period,onPeriod,
       <details className="merch-analytics-method-v120"><summary>Как считаются показатели <ChevronDown size={14}/></summary>
         <p>Видимый показ: {VIEWABILITY_POLICY_V120}. Точное измерение требует событий с идентификаторами страницы, секции, слота и SKU.</p>
         <p>CTR = клики / видимые показы. Охват секции от посетителей страницы и инкрементальная выручка не вычисляются без дополнительного трекинга и эксперимента.</p>
-        <p>Структура ассортимента рассчитана по текущим слотам. Данные показов не подключены к магазину. Демо-показатели синтетические и не суммируются как реальные бизнес-результаты.</p>
+        <p>Нежелательный OOS — размещения без доступного остатка за вычетом явно разрешённых Coming Soon в анонсах. Нулевые остатки всего считаются отдельно. Структура ассортимента рассчитана по текущим слотам. Демо-показатели синтетические. STR требует входящего остатка и продаж за один период, не выводится из остатков SKU.</p>
       </details>
     </div>
   </aside>;
@@ -109,7 +117,7 @@ export function AnalyticsSectionStripV120({record,onSelect,mode='actual'}){
     ['Показы',fmt(record.behavior.exposures)],
     ['CTR',pct(record.behavior.ctr)],
     ['В корзину',fmt(record.behavior.carts)],
-    ['OOS',fmt(record.actual.oos)],
+    ['OOS',fmt(record.actual.commercialOos)],
   ];
   return <div className="merch-analytics-section-strip-v120 merch-analytics-section-report-v122" onClick={event=>event.stopPropagation()}>
     <span className="merch-analytics-section-number-v122">{String(record.position).padStart(2,'0')}</span>
