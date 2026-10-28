@@ -7,7 +7,8 @@ if(!app.includes(MARK)){
  patch(marker,marker+'\nconst '+MARK+' = true;','V123 shell');
  app="import {LeftStructureV124,LeftTypesV124} from './LeftPanelV124.jsx';\n"+app;
  const init='const [aemPanelOpenV40, setAemPanelOpenV40] = useState(false);';
- patch(init,'const [aemPanelOpenV40, setAemPanelOpenV40] = useState(true);','default panel open');
+ if(app.includes(init))patch(init,'const [aemPanelOpenV40, setAemPanelOpenV40] = useState(true);','default panel open');
+ else if(!app.includes('const [aemPanelOpenV40, setAemPanelOpenV40] = useState(true);'))throw Error(MARK+': panel open state missing');
  const content='<div className="aem-side-content-v40">';
  const tabs=`<nav className="studio-left-tabs-v124" role="tablist" aria-label="Разделы левой панели">
    {[["tree","Структура"],["components","Секции"],["pages","Страницы"],["settings","Параметры"]].map(([value,label])=><button type="button" key={value} role="tab" aria-selected={aemPanelTabV40===value} className={aemPanelTabV40===value?'active':''} onClick={()=>{setAemPanelTabV40(value);setAemPanelSearchV40('');setAemPanelOpenV40(true);}}>{label}</button>)}
