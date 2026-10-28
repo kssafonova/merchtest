@@ -20,7 +20,7 @@ const server=await createServer({
 try{
  const app=await server.ssrLoadModule('/src/AppV3.jsx');
  const html=renderToString(React.createElement(app.default));
- for(const needle of ['merch-analytics-inspector-v120','merch-analytics-section-strip-v120','merch-analytics-slot-badge-v120','merch-analytics-section-report-v121','merch-slot-insight-v121','СОСТОЯНИЕ ВИТРИНЫ','Качество наполнения','Демо-метрики','ДАННЫЕ ВИТРИНЫ']){
+ for(const needle of ['merch-analytics-inspector-v120','merch-analytics-section-strip-v120','merch-analytics-slot-badge-v120','merch-analytics-section-report-v122','merch-analytics-slot-button-v122','Качество наполнения','Демо-метрики','ДАННЫЕ ВИТРИНЫ']){
    if(!html.includes(needle))throw Error('Missing analytical UI in live page: '+needle);
  }
  if(html.includes('Симулированные события, не измерения магазина'))throw Error('Simulation unexpectedly enabled by default');
