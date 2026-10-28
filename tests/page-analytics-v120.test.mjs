@@ -62,3 +62,13 @@ test('empty page and incomplete product stock remain safe',()=>{
  assert.equal(actualSectionV120(section('x',[noStock,null,null]),'RU').knownStock,0);
  assert.match(VIEWABILITY_POLICY_V120,/50%/);
 });
+
+test('section reserve and conflict counters come from resolver status, not guesses',()=>{
+  const withData={...a,reserveV63:[{id:'RES-1'},{id:'RES-2'}],automationRuleV63:{status:{reserveCount:9,skuConflicts:1,coverage:66}}};
+  const actual=actualSectionV120(withData,'RU');
+  assert.equal(actual.reserve,2);
+  assert.equal(actual.skuConflicts,1);
+  const withoutData=actualSectionV120(a,'RU');
+  assert.equal(withoutData.reserve,null);
+  assert.equal(withoutData.skuConflicts,null);
+});
