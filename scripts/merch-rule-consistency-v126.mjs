@@ -70,7 +70,7 @@ if(!app.includes('const '+marker+' = true;')){
     'preview uses section commercial policy');
   const drawer=part(app,'UnifiedAutomationDrawerV69');let modal=drawer.value;
   modal=one(modal,'  const autoFillCanApplyV96=!invalidV77&&statsV77.capacity>0;',
-    "  const merchConflictsV126=merchScopeIssuesV126(sourceSectionsV77.length?sourceSectionsV77:[targetSection].filter(Boolean),activeRuleV77,region);\n  const blockingMerchV126=merchConflictsV126.some(issue=>issue.severity==='error');\n  const autoFillCanApplyV96=!invalidV77&&statsV77.capacity>0&&!blockingMerchV126;",
+    "  const merchConflictsV126=merchScopeIssuesV126(sourceSectionsV77.length?sourceSectionsV77:[targetSection].filter(Boolean),activeRuleV77,region,queryAutomationIndexV63(activeRuleV77.selection,region));\n  const blockingMerchV126=merchConflictsV126.some(issue=>issue.severity==='error');\n  const autoFillCanApplyV96=!invalidV77&&statsV77.capacity>0&&!blockingMerchV126;",
     'block incompatible rule before save');
   modal=one(modal,'    if(invalidV77)return;','    if(invalidV77||blockingMerchV126)return;','save conflict guard');
   modal=one(modal,"      {showScopeV77&&<AutomationScopeEditorV76",
