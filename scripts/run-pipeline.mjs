@@ -56,4 +56,5 @@ if (process.env.npm_lifecycle_event === 'prebuild') {
   await import(new URL('./figma-overlap-runtime-smoke-v112.mjs', import.meta.url));
   await import(new URL('./colorway-runtime-smoke-v118.mjs', import.meta.url));
   await import(new URL('./page-analytics-runtime-smoke-v120.mjs', import.meta.url));
+  await import(new URL('./studio-ux-runtime-smoke-v123.mjs', import.meta.url));
 }
