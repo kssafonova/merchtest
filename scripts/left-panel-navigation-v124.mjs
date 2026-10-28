@@ -5,13 +5,13 @@ function patch(before,after,label){if(!app.includes(before))throw Error(MARK+': 
 if(!app.includes(MARK)){
  const marker='const MERCH_STUDIO_EXPERIENCE_V123 = true;';
  patch(marker,marker+'\nconst '+MARK+' = true;','V123 shell');
- app="import {LeftStructureV124,LeftTypesV124} from './LeftPanelV124.jsx';\n"+app;
+ app="import {LeftStructureV124,LeftTypesV124} from './LeftPanelV124.jsx';\nimport './left-panel-v124.css';\n"+app;
  const init='const [aemPanelOpenV40, setAemPanelOpenV40] = useState(false);';
  if(app.includes(init))patch(init,'const [aemPanelOpenV40, setAemPanelOpenV40] = useState(true);','default panel open');
  else if(!app.includes('const [aemPanelOpenV40, setAemPanelOpenV40] = useState(true);'))throw Error(MARK+': panel open state missing');
  const content='<div className="aem-side-content-v40">';
  const tabs=`<nav className="studio-left-tabs-v124" role="tablist" aria-label="Разделы левой панели">
-   {[["tree","Структура"],["components","Секции"],["pages","Страницы"],["settings","Параметры"]].map(([value,label])=><button type="button" key={value} role="tab" aria-selected={aemPanelTabV40===value} className={aemPanelTabV40===value?'active':''} onClick={()=>{setAemPanelTabV40(value);setAemPanelSearchV40('');setAemPanelOpenV40(true);}}>{label}</button>)}
+   {[["tree","Структура"],["components","Секции"],["settings","Параметры"]].map(([value,label])=><button type="button" key={value} role="tab" aria-selected={aemPanelTabV40===value} className={aemPanelTabV40===value?'active':''} onClick={()=>{setAemPanelTabV40(value);setAemPanelSearchV40('');setAemPanelOpenV40(true);}}>{label}</button>)}
  </nav>`;
  patch(content,content+'\n'+tabs,'left navigation');
  const treeStart=app.indexOf('{aemPanelTabV40 === \'tree\' && <div className="aem-content-tree-v40">');
