@@ -52,7 +52,7 @@ test('demo lifecycle is explicit, region-scoped and does not rewrite source obje
   assert.equal(result[1].lifecycleByRegion,undefined);
   assert.equal(isComingSoonV125(result[0],'KZ'),false);
 });
-test('strip stock from teaser selection but preserve collection and nested conditions',()=>{
+test('teaser policy never strips user-supplied stock conditions',()=>{
   const original={enabled:true,rootOperator:'AND',conditions:[
     {type:'condition',field:'stock',operator:'gt',value:0},
     {type:'condition',field:'collection',operator:'eq',value:'W26'},
@@ -62,9 +62,9 @@ test('strip stock from teaser selection but preserve collection and nested condi
     ]},
   ]};
   const result=stripStockFromSelectionV125(original);
-  assert.equal(result.conditions.length,2);
-  assert.equal(result.conditions[0].field,'collection');
-  assert.deepEqual(result.conditions[1].children.map(x=>x.field),['category']);
+  assert.equal(result.conditions.length,3);
+  assert.equal(result.conditions[0].field,'stock');
+  assert.deepEqual(result.conditions[2].children.map(x=>x.field),['category','stock']);
   assert.equal(original.conditions.length,3);
 });
 test('commercial audit is reflected in existing page and section analytics without fictional STR',()=>{

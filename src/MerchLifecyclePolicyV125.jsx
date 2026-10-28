@@ -2,12 +2,14 @@ import React from 'react';
 import {AlertCircle,CheckCircle2,Info,ShoppingBag,CalendarClock,PackageCheck} from 'lucide-react';
 import {MERCH_OBJECTIVES_V125,merchPolicyV125,auditMerchSectionV125} from './merch-lifecycle-v125.mjs';
 import './merch-lifecycle-v125.css';
+import {merchRuleIssuesV126} from './merch-rule-consistency-v126.mjs';
 const icons={sales:ShoppingBag,teaser:CalendarClock,sell_through:PackageCheck};
 export default function MerchLifecyclePolicyV125({section,region,onChange}){
   const policy=merchPolicyV125(section),audit=auditMerchSectionV125(section,region);
+  const issues=merchRuleIssuesV126(section,region);
   return <div className="merch-lifecycle-v125" onClick={event=>event.stopPropagation()} aria-label="Коммерческая цель секции">
     <div className="merch-lifecycle-heading-v125">
-      <div><strong>Коммерческая цель размещения</strong><span>Правила доступности зависят от задачи секции</span></div>
+      <div><strong>Коммерческая цель размещения</strong><span>Цель определяет допустимые товары, но не меняет фильтры и сортировку</span></div>
       <span className="merch-lifecycle-region-v125">{region}</span>
     </div>
     <div className="merch-lifecycle-objectives-v125" role="group" aria-label="Назначение секции">
@@ -32,10 +34,13 @@ export default function MerchLifecyclePolicyV125({section,region,onChange}){
       </span>
     </div>
     <p className="merch-lifecycle-help-v125"><Info size={13}/>
-      {policy.objective==='teaser'?'Анонсы с нулевым остатком остаются в секции при явном статусе Coming Soon. Обычный OOS заменяется по цепочке.':
+      {policy.objective==='teaser'?'Coming Soon разрешён только с явным статусом и при прохождении настроенных условий отбора. Фильтры и сортировка не меняются.':
        policy.objective==='sell_through'?'Продвигаются товары, доступные к покупке. STR рассчитывается отдельно по продажам и запасам за период.':
        'Coming Soon не занимает продающие слоты: для них используется замена или стандартный fallback.'}
     </p>
+    {issues.length>0&&<div className="merch-rule-diagnostics-v126" role="status" aria-live="polite">
+      {issues.map(issue=><p key={issue.code} className={issue.severity}><AlertCircle size={14}/><span>{issue.message}</span></p>)}
+    </div>}
     <small className="merch-lifecycle-demo-v125">Coming Soon в каталоге прототипа — тестовые статусы, не реальные данные магазина.</small>
   </div>;
 }

@@ -66,19 +66,9 @@ export function auditMerchSectionV125(section,region='RU'){
   }
   return {...counts,commercialOos:counts.unwantedOos+counts.comingSoonMisplaced};
 }
-// When merchandising an announcement, ignore *stock* predicates for the teaser candidates only.
-// All category, collection and other predicates are kept. Ordinary sale candidates keep every filter.
-export function stripStockFromSelectionV125(selection){
-  function clean(node){
-    if(!node||typeof node!=='object')return null;
-    if(node.field==='stock')return null;
-    const childrenKey=Array.isArray(node.children)?'children':Array.isArray(node.conditions)?'conditions':null;
-    if(!childrenKey)return node;
-    const next=node[childrenKey].map(clean).filter(Boolean);
-    return next.length?{...node,[childrenKey]:next}:null;
-  }
-  return {...(selection||{}),conditions:(selection?.conditions||[]).map(clean).filter(Boolean)};
-}
+// Deprecated compatibility export: commercial goals must NEVER rewrite explicit selection conditions.
+// Kept temporarily for imports from older demos, but intentionally returns the original rule.
+export function stripStockFromSelectionV125(selection){return selection;}
 export function merchStatusLabelV125(product,region,section){
   const state=placementStateV125(product,region,section);
   return {coming_soon:'Скоро в продаже',coming_soon_misplaced:'Анонс вне сценария',unwanted_oos:'Нет в наличии',available:'В наличии',unknown:'Остаток неизвестен'}[state];

@@ -9,7 +9,7 @@ function replaceOnce(source,before,after,name){
 if(!app.includes('const '+marker+' = true;')){
   app=replaceOnce(app,'const MERCH_STUDIO_EXPERIENCE_V123 = true;',
     'const MERCH_STUDIO_EXPERIENCE_V123 = true;\nconst '+marker+' = true;','post-studio marker');
-  app="import MerchLifecyclePolicyV125 from './MerchLifecyclePolicyV125.jsx';\nimport {attachDemoLifecycleV125,isComingSoonV125,stripStockFromSelectionV125} from './merch-lifecycle-v125.mjs';\n"+app;
+  app="import MerchLifecyclePolicyV125 from './MerchLifecyclePolicyV125.jsx';\nimport {attachDemoLifecycleV125,isComingSoonV125} from './merch-lifecycle-v125.mjs';\n"+app;
   app=replaceOnce(app,
     'const PRODUCTS = applyMarketStockV87([...expandColorVariants(CATALOG_PRODUCTS), ...FEED_PRODUCTS]);',
     'const PRODUCTS = attachDemoLifecycleV125(applyMarketStockV87([...expandColorVariants(CATALOG_PRODUCTS), ...FEED_PRODUCTS]));',
@@ -18,32 +18,11 @@ if(!app.includes('const '+marker+' = true;')){
   const end=app.indexOf('\nfunction resolveSectionsMasterV63(',start);
   if(start<0||end<0)throw new Error(marker+': automation resolver missing');
   let resolver=app.slice(start,end);
-  const addTeaser=String.raw`
-  // Lifecycle policy belongs to the SECTION, not a global warehouse-stock threshold.
-  const lifecyclePolicyV125=section?.merchPolicyV125||{objective:'sales',includeComingSoon:false};
-  const teaserEnabledV125=lifecyclePolicyV125.objective==='teaser'&&lifecyclePolicyV125.includeComingSoon===true;
-  if(teaserEnabledV125&&rule.selection.enabled){
-    const teaserSelectionV125=stripStockFromSelectionV125(rule.selection);
-    const teaserCandidatesV125=teaserSelectionV125.conditions.length
-      ? queryAutomationIndexV63(teaserSelectionV125,region) : PRODUCTS;
-    // Bypass ONLY the stock restriction for explicitly tagged Coming Soon SKUs.
-    // Ordinary sale candidates must pass the original selection unchanged.
-    rawCandidates=[...new Map([...rawCandidates,...teaserCandidatesV125.filter(product=>isComingSoonV125(product,region))]
-      .map(product=>[String(product.id),product])).values()];
-  }
-`;
-  resolver=replaceOnce(resolver,
-    '  if (rule.selection.enabled && !rawCandidates.length && rule.fallback.hideSection) {',
-    addTeaser+'  if (rule.selection.enabled && !rawCandidates.length && rule.fallback.hideSection) {',
-    'teaser candidates before hide');
   resolver=replaceOnce(resolver,
     "const availableRaw = rawCandidates.filter((product)=>Number(automationProductValueV63(product,'stock',region))>0);",
-    "const availableRaw = rawCandidates.filter((product)=>Number(automationProductValueV63(product,'stock',region))>0||(teaserEnabledV125&&isComingSoonV125(product,region)));",
+    "const lifecyclePolicyV125=section?.merchPolicyV125||{objective:'sales',includeComingSoon:false};\n  const teaserEnabledV125=lifecyclePolicyV125.objective==='teaser'&&lifecyclePolicyV125.includeComingSoon===true;\n  const availableRaw = rawCandidates.filter((product)=>Number(automationProductValueV63(product,'stock',region))>0||(teaserEnabledV125&&isComingSoonV125(product,region)));",
     'allow only explicit teasers');
-  resolver=replaceOnce(resolver,
-    'const sorted = automationSortV63(availableRaw,rule,region);',
-    "const sorted = teaserEnabledV125 ? automationSortV63(availableRaw,rule,region).sort((a,b)=>Number(isComingSoonV125(b,region))-Number(isComingSoonV125(a,region))) : automationSortV63(availableRaw,rule,region);",
-    'intent-specific teaser priority');
+  // Keep the saved ranking order. Coming Soon must not silently jump ahead of configured sort.
   resolver=replaceOnce(resolver,
     "      const inStock = Number(automationProductValueV63(entity,'stock',region))>0;",
     "      const inStock = Number(automationProductValueV63(entity,'stock',region))>0;\n      if(teaserEnabledV125&&isComingSoonV125(entity,region)){remember(entity,'pin');slots.push({index,status:'pin',entity,origin:'manual',warning:'Скоро в продаже',lifecycleV125:'coming_soon'});continue;}",
