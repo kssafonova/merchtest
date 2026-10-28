@@ -34,6 +34,7 @@ const pipeline = [
   'section-inline-and-analytics-v121.mjs','section-analytics-design-v121.mjs',
   'section-style-and-status-fix-v122.mjs','section-style-analytics-css-v122.mjs',
   'studio-experience-v123.mjs','studio-design-system-v123.mjs',
+  'left-panel-navigation-v124.mjs','merch-lifecycle-v125.mjs',
 ];
 for (const file of pipeline) {
   await import(new URL('./' + file, import.meta.url));

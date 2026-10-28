@@ -1,4 +1,5 @@
 // Page / section / slot merchandising analytics for merchtest.
+import {auditMerchSectionV125,placementStateV125} from './merch-lifecycle-v125.mjs';
 // No customer tracking is performed by this module.
 // "demo" interaction metrics are deterministic placeholders, always labelled as simulation.
 const num=(value)=>Number.isFinite(Number(value))?Number(value):0;
@@ -26,6 +27,7 @@ export function actualSectionV120(section,region='RU'){
   const products=filled.map(slotEntity).filter(item=>item&&'price' in item);
   const ids=products.map(item=>String(item.id||item.sku||'')).filter(Boolean);
   const oos=products.filter(entity=>normalizeStock(entity,region)===0);
+  const commerce=auditMerchSectionV125(section,region);
   const pinned=slots.filter(slot=>slot.status==='pin'||(section?.pins&&Object.hasOwn(section.pins,String(slot.index)))).length;
   const automated=slots.filter(slot=>slot.status==='auto').length;
   const unique=new Set(ids);
@@ -42,12 +44,15 @@ export function actualSectionV120(section,region='RU'){
   const knownConflict=status?.skuConflicts!=null&&Number.isFinite(Number(status.skuConflicts))?Math.max(0,Number(status.skuConflicts)):null;
   return {capacity:slots.length,filled:filled.length,empty:slots.length-filled.length,productSlots:products.length,pinned,automated,
     reserve,skuConflicts:knownConflict,
-    oos:oos.length,knownStock:products.filter(item=>normalizeStock(item,region)!=null).length,
+    oos:oos.length,commercialOos:commerce.commercialOos,comingSoon:commerce.comingSoon,
+    comingSoonMisplaced:commerce.comingSoonMisplaced,unwantedOos:commerce.unwantedOos,availableNow:commerce.available,
+    knownStock:products.filter(item=>normalizeStock(item,region)!=null).length,
     skuIds:ids,uniqueSku:unique.size,duplicates:ids.length-unique.size,categoryCounts,colorCounts,
     slots:slots.map((slot,index)=>({
       index:Number.isInteger(slot?.index)?slot.index:index,entity:slotEntity(slot),
       sku:slotEntity(slot)?.id||null,status:slot?.status||'empty',
       stock:normalizeStock(slotEntity(slot),region),
+      commercialState:placementStateV125(slotEntity(slot),region,section),
       pinned:slot?.status==='pin'||Boolean(section?.pins&&Object.hasOwn(section.pins,String(slot?.index??index))),
     }))};
 }
@@ -94,7 +99,8 @@ export function insightsV120(records){
   if(duplicated.length)out.push({kind:'duplicate',severity:'warning',title:'Повторения SKU',detail:duplicated.length+' артикулов встречаются больше одного раза на странице',action:'Проверить дедупликацию и ручные PIN'});
   for(const rec of records){
     if(rec.actual.empty)out.push({kind:'empty',sectionId:rec.id,severity:'warning',title:'Пустые слоты',detail:rec.name+': '+rec.actual.empty+' пустых из '+rec.actual.capacity,action:'Заполнить или проверить правило'});
-    if(rec.actual.oos)out.push({kind:'oos',sectionId:rec.id,severity:'warning',title:'Товар без остатков',detail:rec.name+': '+rec.actual.oos+' SKU с нулевым остатком',action:'Заменить PIN или включить OOS-замену'});
+    if(rec.actual.commercialOos)out.push({kind:'oos',sectionId:rec.id,severity:'warning',title:'Нежелательный OOS',detail:rec.name+': '+rec.actual.commercialOos+' размещений без возможности покупки',action:'Проверить статус, цель размещения и цепочку замены'});
+    if(rec.actual.comingSoon)out.push({kind:'coming_soon',sectionId:rec.id,severity:'info',title:'Анонс Coming Soon',detail:rec.name+': '+rec.actual.comingSoon+' SKU показываются осознанно без доступного остатка',action:'Оценивать интерес и подписки отдельно от продаж'});
     if(rec.behavior.ctr!=null&&rec.behavior.exposures>=100&&rec.behavior.ctr>=7&&rec.behavior.exposures<250)
       out.push({kind:'opportunity',sectionId:rec.id,severity:'info',title:'Интересный блок с ограниченным охватом',detail:rec.name+': высокий CTR при сравнительно малом количестве видимых показов',action:'Проверить перенос выше и сравнить в эксперименте'});
   }
@@ -113,7 +119,9 @@ export function pageAnalyticsV120(sections=[],{region='RU',device='desktop',peri
   const totals={sections:records.length,slots:records.reduce((n,r)=>n+r.actual.capacity,0),
     filled:records.reduce((n,r)=>n+r.actual.filled,0),empty:records.reduce((n,r)=>n+r.actual.empty,0),
     pinned:records.reduce((n,r)=>n+r.actual.pinned,0),automated:records.reduce((n,r)=>n+r.actual.automated,0),
-    oos:records.reduce((n,r)=>n+r.actual.oos,0),uniqueSkus:new Set(allSkus).size,
+    oos:records.reduce((n,r)=>n+r.actual.oos,0),commercialOos:records.reduce((n,r)=>n+r.actual.commercialOos,0),
+    comingSoon:records.reduce((n,r)=>n+r.actual.comingSoon,0),comingSoonMisplaced:records.reduce((n,r)=>n+r.actual.comingSoonMisplaced,0),
+    availableNow:records.reduce((n,r)=>n+r.actual.availableNow,0),uniqueSkus:new Set(allSkus).size,
     duplicatedSku:[...new Set(allSkus.filter(sku=>allSkus.filter(x=>x===sku).length>1))].length};
   const behavior=demonstration?aggregateBehavior(records.map(r=>r.behavior)):
     events.length?aggregateBehavior(records.map(r=>r.behavior)):emptyBehavior();
