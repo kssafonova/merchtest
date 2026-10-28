@@ -62,3 +62,11 @@ test('nested group stock restrictions are visible in compatibility diagnostics',
  const issues=merchRuleIssuesV126(teaser,'RU',{selection:sel,fallback:{replacementChain:[]}});
  assert.ok(issues.some(x=>x.code==='stock_filters_teaser'));
 });
+
+test('mixed grouped goals are rejected only when shared matching pool includes a Coming Soon SKU',()=>{
+ const broad={selection:conditions({type:'condition',field:'category',operator:'eq',value:'Платья'}),fallback:{replacementChain:[]}};
+ assert.equal(merchScopeIssuesV126([teaser,sales],broad,'RU',[available]).length,0);
+ const issues=merchScopeIssuesV126([teaser,sales],broad,'RU',[coming,available]);
+ assert.ok(issues.some(x=>x.code==='mixed_commercial_scope'&&x.severity==='error'));
+ assert.equal(merchScopeIssuesV126([teaser,{...teaser,id:'other'}],broad,'RU',[coming]).length,0);
+});
